@@ -8,6 +8,7 @@ public class Local {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_local")
     private Long id;
 
     private Double latitude;
