@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Recarga Fácil - Pontos de Recarga para Veículos Elétricos</title>
+  
+  <!-- Tipografia Moderna (Plus Jakarta Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Remix Icons (Biblioteca de Ícones Modernos) -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Estilos Customizados da Aplicação -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/screens.css">
+</head>
+<body>
+
+  <!-- VIEWPORT PRINCIPAL -->
+  <div id="app-viewport">
+    
+    <!-- CONTAINER DO APP MOBILE (COM SIMULAÇÃO NATIVA) -->
+    <main class="app-container phone-frame">
+      
+      <!-- Barra de Status Mobile (iOS / Android Native Feel) -->
+      <header class="mobile-status-bar">
+        <span id="status-bar-time">21:40</span>
+        <!-- Indicador de Conexão com Back-end Java Spring Boot -->
+        <span id="backend-status-indicator" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; display: flex; align-items: center;">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00D084;margin-right:4px;"></span> Conectando...
+        </span>
+        <div class="status-icons">
+          <i class="ri-signal-tower-fill"></i>
+          <i class="ri-wifi-fill"></i>
+          <i class="ri-battery-charge-fill" style="color: var(--primary);"></i>
+        </div>
+      </header>
+
+      <!-- ÁREA DE TELAS DO SISTEMA (SPA) -->
+      <div class="app-content">
+
+        <!-- ================================================================
+             TELA 1: BUSCA NO MAPA COM FILTROS AVANÇADOS DE COMODIDADES
+             ================================================================ -->
+        <section id="screen-search" class="app-screen active">
+          
+          <!-- Barra de Busca e Filtros Flutuantes -->
+          <div class="search-container">
+            <!-- Campo de Busca -->
+            <div class="search-box">
+              <i class="ri-search-2-line"></i>
+              <input type="text" id="search-input" placeholder="Buscar cidade, bairro ou endereço..." value="Sorocaba - SP">
+              <button class="btn-locate" title="Minha Localização" onclick="showToast('Localização atualizada: Sorocaba/SP')">
+                <i class="ri-crosshair-2-line"></i>
+              </button>
+            </div>
+
+            <!-- Filtros de Tipo de Ponto (Todos / Residencial / Comercial) -->
+            <div class="filter-pills-row">
+              <button class="filter-chip active" data-type="todos">
+                <i class="ri-apps-2-line"></i> Todos
+              </button>
+              <button class="filter-chip" data-type="residencial">
+                <i class="ri-home-4-line"></i> Residenciais
+              </button>
+              <button class="filter-chip" data-type="comercial">
+                <i class="ri-building-2-line"></i> Comerciais
+              </button>
+            </div>
+
+            <!-- DIFERENCIAL DO PROJETO: FILTRO DE COMODIDADES (WI-FI, CAFÉ, VAGA COBERTA, ETC.) -->
+            <div class="amenities-filter-bar" id="amenities-filter-container">
+              <!-- Gerado dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Indicador de Resultados -->
+          <div class="search-results-counter" id="results-counter">
+            <i class="ri-charging-pile-2-fill"></i> Carregando pontos...
+          </div>
+
+          <!-- Mapa Central Interativo -->
+          <div id="map-container"></div>
+
+          <!-- Botão GPS Flutuante -->
+          <button class="floating-gps-btn" onclick="showToast('Centralizando no seu veículo elétrico...')" title="Centralizar GPS">
+            <i class="ri-navigation-fill" style="color: var(--primary);"></i>
+          </button>
+
+          <!-- Bottom Sheet: Preview do Ponto Selecionado no Mapa -->
+          <div id="map-bottom-sheet" class="bottom-sheet-preview">
+            <!-- Conteúdo inserido dinamicamente via JS -->
+          </div>
+        </section>
+
+        <!-- ================================================================
+             TELA 2: DETALHES DA WALLBOX (ESPECIFICAÇÕES, ANFITRIÃO E REGRAS)
+             ================================================================ -->
+        <section id="screen-details" class="app-screen">
+          <div id="details-content-placeholder">
+            <!-- Conteúdo inserido dinamicamente via JS -->
+          </div>
+        </section>
+
+        <!-- ================================================================
+             TELA 3: AGENDAMENTO (DATA, DURAÇÃO E GRADE DE HORÁRIOS)
+             ================================================================ -->
+        <section id="screen-booking" class="app-screen">
+          <div id="booking-content-placeholder">
+            <!-- Conteúdo inserido dinamicamente via JS -->
+          </div>
+        </section>
+
+        <!-- ================================================================
+             TELA 4: PAGAMENTO & CHECKOUT (COM TAXA DE 25% E PIX/CARTÃO)
+             ================================================================ -->
+        <section id="screen-checkout" class="app-screen">
+          <div id="checkout-content-placeholder">
+            <!-- Conteúdo inserido dinamicamente via JS -->
+          </div>
+        </section>
+
+        <!-- ================================================================
+             TELA 5: SUCESSO & DESBLOQUEIO SEGURO DO ENDEREÇO COMPLETO
+             ================================================================ -->
+        <section id="screen-success" class="app-screen">
+          <div id="success-content-placeholder">
+            <!-- Conteúdo inserido dinamicamente via JS -->
+          </div>
+        </section>
+
+        <!-- ================================================================
+             TELA 6: FAVORITOS (WALLBOXES SALVAS PELO USUÁRIO)
+             ================================================================ -->
+        <section id="screen-favorites" class="app-screen">
+          <div id="favorites-content-placeholder">
+            <!-- Conteúdo inserido dinamicamente via JS -->
+          </div>
+        </section>
+
+        <!-- ================================================================
+             TELA 7: MINHAS RECARGAS (HISTÓRICO E RESERVAS ATIVAS)
+             ================================================================ -->
+        <section id="screen-bookings-list" class="app-screen">
+          <div id="bookings-list-content-placeholder">
+            <!-- Conteúdo inserido dinamicamente via JS -->
+          </div>
+        </section>
+
+        <!-- ================================================================
+             TELA 8: PERFIL DO MOTORISTA & IMPACTO SUSTENTÁVEL
+             ================================================================ -->
+        <section id="screen-profile" class="app-screen">
+          <div id="profile-content-placeholder">
+            <!-- Conteúdo inserido dinamicamente via JS -->
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ================================================================
+           BOTTOM NAVIGATION BAR (APP NATIVO)
+           ================================================================ -->
+      <nav class="bottom-nav" id="bottom-nav-bar">
+        <a href="#mapa" class="nav-item active" data-target="screen-search">
+          <i class="ri-map-pin-2-fill"></i>
+          <span>Explorar</span>
+        </a>
+        <a href="#reservas" class="nav-item" data-target="screen-bookings-list">
+          <i class="ri-calendar-todo-line"></i>
+          <span>Recargas</span>
+        </a>
+        <a href="#favoritos" class="nav-item" data-target="screen-favorites">
+          <i class="ri-heart-3-line"></i>
+          <span>Favoritos</span>
+        </a>
+        <a href="#perfil" class="nav-item" data-target="screen-profile">
+          <i class="ri-user-3-line"></i>
+          <span>Perfil</span>
+        </a>
+      </nav>
+
+      <!-- TOAST DE NOTIFICAÇÃO NATIVO -->
+      <div id="app-toast" class="toast-container">
+        <i class="ri-checkbox-circle-fill"></i>
+        <span id="toast-message">Operação realizada com sucesso</span>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- CONTROLE DESKTOP (ALTERNAR MODO CELULAR / TELA CHEIA) -->
+  <aside class="desktop-controls">
+    <span><i class="ri-smartphone-line"></i> Pré-visualização</span>
+    <button id="toggle-frame-btn">Modo Tela Cheia</button>
+  </aside>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Scripts do Aplicativo e Comunicação com API Java -->
+  <script src="js/data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

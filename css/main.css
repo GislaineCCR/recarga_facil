@@ -1,0 +1,254 @@
+/* ==========================================================================
+   RECARGA FÁCIL - DESIGN SYSTEM & MAIN STYLES
+   Paleta: Verde Vibrante Elétrico, Branco Puro, Cinza Ardósia e Acentos Dark
+   ========================================================================== */
+
+:root {
+  /* Cores Principais da Marca */
+  --primary: #00D084;           /* Verde Elétrico Vibrante Principal */
+  --primary-hover: #00B572;     /* Verde Interativo Hover/Active */
+  --primary-light: #E6FBF3;     /* Verde Claro Suave para Fundos e Badges */
+  --primary-glow: rgba(0, 208, 132, 0.35);
+
+  --secondary: #059669;         /* Verde Esmeralda Profundo */
+  --accent-gold: #F59E0B;        /* Dourado para avaliações/estrelas */
+  --accent-blue: #3B82F6;        /* Azul para destaques comerciais/GPS */
+
+  /* Cores Neutras & Escalas de Cinza */
+  --white: #FFFFFF;
+  --bg-app: #F8FAFC;            /* Fundo principal do app mobile */
+  --bg-card: #FFFFFF;
+  --bg-glass: rgba(255, 255, 255, 0.92);
+  --bg-subtle: #F1F5F9;
+  --border-light: #E2E8F0;
+  --border-focus: #00D084;
+
+  /* Tipografia & Contrastes */
+  --text-main: #0F172A;         /* Slate escuro para máxima legibilidade */
+  --text-muted: #64748B;        /* Texto secundário */
+  --text-light: #94A3B8;        /* Placeholders e legendas */
+  --text-on-primary: #FFFFFF;
+
+  /* Estados e Alertas */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --danger-light: #FEF2F2;
+
+  /* Sombras Modernas (Soft Elevation) */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 30px rgba(15, 23, 42, 0.12);
+  --shadow-glow: 0 8px 24px var(--primary-glow);
+
+  /* Curvaturas / Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* Transições suaves */
+  --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Dimensões Layout */
+  --app-max-width: 440px;
+  --header-height: 56px;
+  --bottom-nav-height: 68px;
+}
+
+/* Reset Básico & Box Sizing */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #0B1120; /* Fundo escuro elegante para o ambiente de desktop */
+  color: var(--text-main);
+  overflow-x: hidden;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   CONTAINER DO APLICATIVO (MOBILE-FIRST / NATIVE SIMULATION)
+   ========================================================================== */
+
+#app-viewport {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at 50% 10%, #1E293B 0%, #0B1120 100%);
+  padding: 0;
+}
+
+/* Em telas de desktop, simula o frame de um smartphone com toggle */
+.app-container {
+  width: 100%;
+  max-width: var(--app-max-width);
+  height: 100vh;
+  height: 100dvh;
+  max-height: 900px;
+  background-color: var(--bg-app);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: all var(--transition-normal);
+}
+
+/* Modo Desktop Frame estilizado */
+@media (min-width: 480px) {
+  .app-container.phone-frame {
+    border-radius: 44px;
+    height: 870px;
+    margin: 20px auto;
+    border: 10px solid #1E293B;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(255, 255, 255, 0.08);
+  }
+
+  .app-container.phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 22px;
+    background-color: #0F172A;
+    border-radius: 12px;
+    z-index: 9999;
+  }
+}
+
+/* Modo Fullscreen (quando o usuário desativa o frame no desktop) */
+.app-container.fullscreen-mode {
+  max-width: 100% !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  border: none !important;
+  margin: 0 !important;
+}
+
+/* Barra de Status Mobile */
+.mobile-status-bar {
+  height: 32px;
+  padding: 6px 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  background: transparent;
+  z-index: 100;
+  user-select: none;
+}
+
+.mobile-status-bar .status-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+/* Área Principal de Conteúdo e Telas */
+.app-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Estrutura de Telas (SPA) */
+.app-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-app);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(30px);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: var(--bottom-nav-height);
+}
+
+.app-screen.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+  z-index: 10;
+}
+
+.app-screen.slide-back {
+  transform: translateX(-30px);
+}
+
+/* Telas de fluxo com botão voltar fixo */
+.screen-header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.screen-header-nav .header-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-align: center;
+}
+
+/* Utilitários Gerais */
+.text-primary { color: var(--primary) !important; }
+.text-secondary { color: var(--secondary) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.font-bold { font-weight: 700 !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-medium { font-weight: 500 !important; }
+
+.d-flex { display: flex; }
+.align-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+
+.w-100 { width: 100%; }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
