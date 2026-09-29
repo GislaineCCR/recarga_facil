@@ -57,7 +57,7 @@
             <div class="search-box">
               <i class="ri-search-2-line"></i>
               <input type="text" id="search-input" placeholder="Buscar cidade, bairro ou endereço..." value="Sorocaba - SP">
-              <button class="btn-locate" title="Minha Localização" onclick="showToast('Localização atualizada: Sorocaba/SP')">
+              <button class="btn-locate" title="Minha Localização" onclick="handleGpsLocate()">
                 <i class="ri-crosshair-2-line"></i>
               </button>
             </div>
@@ -90,7 +90,7 @@
           <div id="map-container"></div>
 
           <!-- Botão GPS Flutuante -->
-          <button class="floating-gps-btn" onclick="showToast('Centralizando no seu veículo elétrico...')" title="Centralizar GPS">
+          <button class="floating-gps-btn" onclick="handleGpsLocate()" title="Centralizar GPS">
             <i class="ri-navigation-fill" style="color: var(--primary);"></i>
           </button>
 
@@ -104,7 +104,7 @@
              TELA 2: DETALHES DA WALLBOX (ESPECIFICAÇÕES, ANFITRIÃO E REGRAS)
              ================================================================ -->
         <section id="screen-details" class="app-screen">
-          <div id="details-content-placeholder">
+          <div id="details-content-placeholder" class="screen-placeholder-container">
             <!-- Conteúdo inserido dinamicamente via JS -->
           </div>
         </section>
@@ -113,7 +113,7 @@
              TELA 3: AGENDAMENTO (DATA, DURAÇÃO E GRADE DE HORÁRIOS)
              ================================================================ -->
         <section id="screen-booking" class="app-screen">
-          <div id="booking-content-placeholder">
+          <div id="booking-content-placeholder" class="screen-placeholder-container">
             <!-- Conteúdo inserido dinamicamente via JS -->
           </div>
         </section>
@@ -122,7 +122,7 @@
              TELA 4: PAGAMENTO & CHECKOUT (COM TAXA DE 25% E PIX/CARTÃO)
              ================================================================ -->
         <section id="screen-checkout" class="app-screen">
-          <div id="checkout-content-placeholder">
+          <div id="checkout-content-placeholder" class="screen-placeholder-container">
             <!-- Conteúdo inserido dinamicamente via JS -->
           </div>
         </section>
@@ -131,7 +131,7 @@
              TELA 5: SUCESSO & DESBLOQUEIO SEGURO DO ENDEREÇO COMPLETO
              ================================================================ -->
         <section id="screen-success" class="app-screen">
-          <div id="success-content-placeholder">
+          <div id="success-content-placeholder" class="screen-placeholder-container">
             <!-- Conteúdo inserido dinamicamente via JS -->
           </div>
         </section>
@@ -140,7 +140,7 @@
              TELA 6: FAVORITOS (WALLBOXES SALVAS PELO USUÁRIO)
              ================================================================ -->
         <section id="screen-favorites" class="app-screen">
-          <div id="favorites-content-placeholder">
+          <div id="favorites-content-placeholder" class="screen-placeholder-container">
             <!-- Conteúdo inserido dinamicamente via JS -->
           </div>
         </section>
@@ -149,7 +149,7 @@
              TELA 7: MINHAS RECARGAS (HISTÓRICO E RESERVAS ATIVAS)
              ================================================================ -->
         <section id="screen-bookings-list" class="app-screen">
-          <div id="bookings-list-content-placeholder">
+          <div id="bookings-list-content-placeholder" class="screen-placeholder-container">
             <!-- Conteúdo inserido dinamicamente via JS -->
           </div>
         </section>
@@ -158,7 +158,7 @@
              TELA 8: PERFIL DO MOTORISTA & IMPACTO SUSTENTÁVEL
              ================================================================ -->
         <section id="screen-profile" class="app-screen">
-          <div id="profile-content-placeholder">
+          <div id="profile-content-placeholder" class="screen-placeholder-container">
             <!-- Conteúdo inserido dinamicamente via JS -->
           </div>
         </section>

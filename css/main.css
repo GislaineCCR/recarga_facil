@@ -190,9 +190,8 @@ html, body {
   pointer-events: none;
   transform: translateX(30px);
   transition: opacity var(--transition-normal), transform var(--transition-normal);
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-bottom: var(--bottom-nav-height);
+  overflow: hidden;
+  padding-bottom: 0;
 }
 
 .app-screen.active {
@@ -204,6 +203,26 @@ html, body {
 
 .app-screen.slide-back {
   transform: translateX(-30px);
+}
+
+/* Estrutura interna de todas as telas (para scroll fluído e barras fixas ancoradas no rodapé) */
+.screen-scroll-body {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.screen-placeholder-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Telas de fluxo com botão voltar fixo */

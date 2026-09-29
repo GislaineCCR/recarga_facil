@@ -17,11 +17,18 @@ const AppState = {
   searchQuery: '',
   wallboxesList: [],
   backendOnline: false,
+  userLocation: {
+    lat: -23.5100,
+    lng: -47.4600,
+    address: 'Sorocaba - SP'
+  },
+  userMarker: null,
   booking: {
     wallboxId: 1,
     reservaId: 1,
     date: 'Hoje, 26 Ago',
-    timeSlot: '14:00 - 16:00',
+    selectedStartTime: '08:00',
+    timeSlot: '08:00 - 10:00',
     durationHours: 2,
     pricePerHour: 15.00,
     subtotal: 30.00,
@@ -101,20 +108,68 @@ function saveFavorites() {
 }
 
 /**
- * Carrega pontos de recarga da API Java Spring Boot (com fallback para mock local)
+ * RN02: CÁLCULO DE DISTÂNCIAS GEODÉSICAS (LEAFLET OPEN SOURCE)
+ * Utiliza L.latLng().distanceTo() para computar com alta precisão geodésica
+ * a distância em km entre o condutor do veículo elétrico e cada ponto de recarga.
+ * Nesta fase inicial, a busca por raio é filtrada a nível de banco de dados (Spring Boot / SQL Haversine).
+ */
+function calculateDistanceKm(lat1, lng1, lat2, lng2) {
+  if (typeof L !== 'undefined' && L.latLng) {
+    const point1 = L.latLng(lat1, lng1);
+    const point2 = L.latLng(lat2, lng2);
+    return point1.distanceTo(point2) / 1000; // Converte metros para quilômetros
+  }
+  // Fallback de Haversine matemático caso Leaflet não esteja instanciado
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLng = (lng2 - lng1) * (Math.PI / 180);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function updateDistancesFromUserLocation() {
+  const list = (AppState.wallboxesList && AppState.wallboxesList.length > 0)
+    ? AppState.wallboxesList
+    : WALLBOXES_DATA;
+
+  list.forEach(wb => {
+    if (wb.lat && wb.lng && AppState.userLocation) {
+      const dist = calculateDistanceKm(
+        AppState.userLocation.lat,
+        AppState.userLocation.lng,
+        wb.lat,
+        wb.lng
+      );
+      wb.distanceKm = Number(dist.toFixed(1));
+    }
+  });
+}
+
+/**
+ * Carrega pontos de recarga da API Java Spring Boot (com suporte a filtro de raio no banco de dados)
  */
 async function loadWallboxData() {
   const isHealthy = await ApiService.checkBackendHealth();
   AppState.backendOnline = isHealthy;
   updateBackendStatusBadge(isHealthy);
 
-  AppState.wallboxesList = await ApiService.getWallboxes();
+  // Consulta pontos no backend (filtrando por raio de proximidade no BD) ou usa dataset local
+  AppState.wallboxesList = await ApiService.getWallboxes(
+    AppState.userLocation.lat,
+    AppState.userLocation.lng,
+    15
+  );
 
   if (AppState.wallboxesList.length > 0) {
     AppState.selectedWallbox = AppState.wallboxesList[0];
   }
 
+  updateDistancesFromUserLocation();
   renderMapMarkers();
+  renderUserLocationMarker(AppState.userLocation.lat, AppState.userLocation.lng);
 }
 
 function updateBackendStatusBadge(isOnline) {
@@ -133,27 +188,103 @@ function updateBackendStatusBadge(isOnline) {
 }
 
 /* ==========================================================================
-   1. MAPA INTERATIVO E MARCADORES (LEAFLET + CUSTOM HTML)
+   1. MAPA INTERATIVO E MARCADORES (LEAFLET + OPENSTREETMAP OPEN SOURCE)
    ========================================================================== */
 function initMap() {
   const mapElement = document.getElementById('map-container');
   if (!mapElement) return;
 
-  const defaultCenter = [-23.5100, -47.4600];
+  const defaultCenter = [AppState.userLocation.lat, AppState.userLocation.lng];
 
   try {
     AppState.map = L.map('map-container', {
       zoomControl: false,
-      attributionControl: false
+      attributionControl: true
     }).setView(defaultCenter, 13);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19
+    // Tiles oficiais OpenSource do OpenStreetMap (100% livres, sem restrição de API Key)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(AppState.map);
 
+    renderUserLocationMarker(AppState.userLocation.lat, AppState.userLocation.lng);
     renderMapMarkers();
   } catch (e) {
     console.warn("Leaflet fallback ativo.", e);
+  }
+}
+
+function renderUserLocationMarker(lat, lng) {
+  if (!AppState.map) return;
+  if (AppState.userMarker) {
+    AppState.map.removeLayer(AppState.userMarker);
+  }
+
+  const userIcon = L.divIcon({
+    className: 'leaflet-user-gps-icon',
+    html: `
+      <div style="position: relative; width: 28px; height: 28px;">
+        <div class="pin-pulse" style="background: rgba(0, 102, 204, 0.4);"></div>
+        <div style="position: absolute; width: 16px; height: 16px; top: 6px; left: 6px; border-radius: 50%; background: #0066CC; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 8px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center;">
+          <div style="width: 4px; height: 4px; border-radius: 50%; background: white;"></div>
+        </div>
+      </div>
+    `,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+
+  AppState.userMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(AppState.map);
+}
+
+function handleGpsLocate() {
+  showToast("Obtendo localização do veículo...");
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        AppState.userLocation.lat = lat;
+        AppState.userLocation.lng = lng;
+
+        if (AppState.map) {
+          AppState.map.setView([lat, lng], 14);
+          renderUserLocationMarker(lat, lng);
+        }
+
+        // RN02: Busca no banco de dados por proximidade
+        if (AppState.backendOnline) {
+          AppState.wallboxesList = await ApiService.getWallboxes(lat, lng, 15);
+        }
+
+        // RN02: Recalcula distâncias de todos os pontos no frontend usando Leaflet
+        updateDistancesFromUserLocation();
+        renderMapMarkers();
+        showToast("Distâncias recalculadas com Leaflet (RN02)");
+      },
+      (error) => {
+        console.warn("Geolocalização não autorizada, centralizando em Sorocaba/SP:", error);
+        if (AppState.map) {
+          AppState.map.setView([AppState.userLocation.lat, AppState.userLocation.lng], 13);
+          renderUserLocationMarker(AppState.userLocation.lat, AppState.userLocation.lng);
+        }
+        updateDistancesFromUserLocation();
+        renderMapMarkers();
+        showToast("Mapa centralizado em Sorocaba - SP");
+      },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  } else {
+    if (AppState.map) {
+      AppState.map.setView([AppState.userLocation.lat, AppState.userLocation.lng], 13);
+      renderUserLocationMarker(AppState.userLocation.lat, AppState.userLocation.lng);
+    }
+    updateDistancesFromUserLocation();
+    renderMapMarkers();
+    showToast("Mapa centralizado em Sorocaba - SP");
   }
 }
 
@@ -446,37 +577,39 @@ function renderScreenFavorites() {
   }).join('');
 
   container.innerHTML = `
-    <div class="favorites-header">
-      <h1>Meus Favoritos</h1>
-      <p>${favList.length} ponto${favList.length === 1 ? '' : 's'} de recarga salvo${favList.length === 1 ? '' : 's'}</p>
-    </div>
+    <div class="screen-scroll-body" style="padding: 16px 16px calc(var(--bottom-nav-height) + 20px) 16px;">
+      <div class="favorites-header">
+        <h1>Meus Favoritos</h1>
+        <p>${favList.length} ponto${favList.length === 1 ? '' : 's'} de recarga salvo${favList.length === 1 ? '' : 's'}</p>
+      </div>
 
-    <!-- Filtros de Tipo nos Favoritos -->
-    <div class="filter-pills-row mb-3">
-      <button class="filter-chip ${AppState.favoritesFilter === 'todos' ? 'active' : ''}" onclick="setFavoritesFilter('todos')">
-        Todos (${favList.length})
-      </button>
-      <button class="filter-chip ${AppState.favoritesFilter === 'residencial' ? 'active' : ''}" onclick="setFavoritesFilter('residencial')">
-        Residenciais
-      </button>
-      <button class="filter-chip ${AppState.favoritesFilter === 'comercial' ? 'active' : ''}" onclick="setFavoritesFilter('comercial')">
-        Comerciais
-      </button>
-    </div>
-
-    <!-- Lista de Cards ou Estado Vazio -->
-    ${favList.length === 0 ? `
-      <div class="empty-state-box">
-        <div class="empty-state-icon"><i class="ri-heart-3-line"></i></div>
-        <h3 style="font-size: 16px; font-weight: 700;">Nenhum favorito salvo ainda</h3>
-        <p style="font-size: 13px; color: var(--text-muted); max-width: 260px;">
-          Toque no ícone de coração nos pontos do mapa para salvá-los aqui e agendar recargas com rapidez.
-        </p>
-        <button class="btn btn-primary mt-2" onclick="navigateTo('screen-search')">
-          <i class="ri-map-pin-2-line"></i> Explorar no Mapa
+      <!-- Filtros de Tipo nos Favoritos -->
+      <div class="filter-pills-row mb-3">
+        <button class="filter-chip ${AppState.favoritesFilter === 'todos' ? 'active' : ''}" onclick="setFavoritesFilter('todos')">
+          Todos (${favList.length})
+        </button>
+        <button class="filter-chip ${AppState.favoritesFilter === 'residencial' ? 'active' : ''}" onclick="setFavoritesFilter('residencial')">
+          Residenciais
+        </button>
+        <button class="filter-chip ${AppState.favoritesFilter === 'comercial' ? 'active' : ''}" onclick="setFavoritesFilter('comercial')">
+          Comerciais
         </button>
       </div>
-    ` : cardsHtml}
+
+      <!-- Lista de Cards ou Estado Vazio -->
+      ${favList.length === 0 ? `
+        <div class="empty-state-box">
+          <div class="empty-state-icon"><i class="ri-heart-3-line"></i></div>
+          <h3 style="font-size: 16px; font-weight: 700;">Nenhum favorito salvo ainda</h3>
+          <p style="font-size: 13px; color: var(--text-muted); max-width: 260px;">
+            Toque no ícone de coração nos pontos do mapa para salvá-los aqui e agendar recargas com rapidez.
+          </p>
+          <button class="btn btn-primary mt-2" onclick="navigateTo('screen-search')">
+            <i class="ri-map-pin-2-line"></i> Explorar no Mapa
+          </button>
+        </div>
+      ` : cardsHtml}
+    </div>
   `;
 }
 
@@ -541,12 +674,14 @@ function renderScreenBookingsList() {
   `).join('');
 
   container.innerHTML = `
-    <div class="favorites-header">
-      <h1>Minhas Recargas</h1>
-      <p>Histórico e sessões agendadas</p>
-    </div>
+    <div class="screen-scroll-body" style="padding: 16px 16px calc(var(--bottom-nav-height) + 20px) 16px;">
+      <div class="favorites-header">
+        <h1>Minhas Recargas</h1>
+        <p>Histórico e sessões agendadas</p>
+      </div>
 
-    ${bookingsHtml}
+      ${bookingsHtml}
+    </div>
   `;
 }
 
@@ -558,84 +693,86 @@ function renderScreenProfile() {
   if (!container) return;
 
   container.innerHTML = `
-    <!-- Card do Usuário -->
-    <div class="profile-hero-card">
-      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&h=160&q=80" alt="Avatar" class="profile-avatar-large">
-      <div>
-        <h2 style="font-size: 17px; font-weight: 800;">Motorista Demo EV</h2>
-        <p style="font-size: 12px; color: #94A3B8;">motorista@email.com</p>
-        <span class="badge badge-verified mt-1" style="background: rgba(0, 208, 132, 0.2); color: #00D084;">
-          <i class="ri-shield-check-fill"></i> Motorista Verificado
-        </span>
-      </div>
-    </div>
-
-    <!-- Veículo Elétrico Cadastrado -->
-    <div class="card mb-3">
-      <div class="d-flex justify-between align-center mb-2">
-        <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Meu Veículo Elétrico</span>
-        <span class="badge badge-power"><i class="ri-plug-line"></i> Tipo 2 / CCS2</span>
-      </div>
-      <div class="d-flex gap-3 align-center">
-        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: #ECFDF5; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--secondary);">
-          <i class="ri-car-line"></i>
-        </div>
+    <div class="screen-scroll-body" style="padding: 16px 16px calc(var(--bottom-nav-height) + 20px) 16px;">
+      <!-- Card do Usuário -->
+      <div class="profile-hero-card">
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&h=160&q=80" alt="Avatar" class="profile-avatar-large">
         <div>
-          <h4 style="font-size: 14px; font-weight: 800;">BYD Dolphin GS 2024</h4>
-          <p style="font-size: 12px; color: var(--text-muted);">Placa: BRA2E19 • Bateria 44.9 kWh</p>
+          <h2 style="font-size: 17px; font-weight: 800;">Motorista Demo EV</h2>
+          <p style="font-size: 12px; color: #94A3B8;">motorista@email.com</p>
+          <span class="badge badge-verified mt-1" style="background: rgba(0, 208, 132, 0.2); color: #00D084;">
+            <i class="ri-shield-check-fill"></i> Motorista Verificado
+          </span>
         </div>
       </div>
-    </div>
 
-    <!-- Dashboard de Impacto Sustentável -->
-    <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Seu Impacto Sustentável</h3>
-    <div class="impact-dashboard-grid">
-      <div class="impact-metric-box">
-        <i class="ri-leaf-line" style="color: var(--primary); font-size: 18px;"></i>
-        <div class="metric-val">148.5 kg</div>
-        <div class="metric-label">CO₂ Evitado</div>
+      <!-- Veículo Elétrico Cadastrado -->
+      <div class="card mb-3">
+        <div class="d-flex justify-between align-center mb-2">
+          <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Meu Veículo Elétrico</span>
+          <span class="badge badge-power"><i class="ri-plug-line"></i> Tipo 2 / CCS2</span>
+        </div>
+        <div class="d-flex gap-3 align-center">
+          <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: #ECFDF5; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--secondary);">
+            <i class="ri-car-line"></i>
+          </div>
+          <div>
+            <h4 style="font-size: 14px; font-weight: 800;">BYD Dolphin GS 2024</h4>
+            <p style="font-size: 12px; color: var(--text-muted);">Placa: BRA2E19 • Bateria 44.9 kWh</p>
+          </div>
+        </div>
       </div>
-      <div class="impact-metric-box">
-        <i class="ri-flashlight-line" style="color: #F59E0B; font-size: 18px;"></i>
-        <div class="metric-val">210 kWh</div>
-        <div class="metric-label">Energia Limpa</div>
-      </div>
-      <div class="impact-metric-box">
-        <i class="ri-charging-pile-line" style="color: #3B82F6; font-size: 18px;"></i>
-        <div class="metric-val">5</div>
-        <div class="metric-label">Sessões</div>
-      </div>
-    </div>
 
-    <!-- Menu de Opções -->
-    <div class="profile-menu-list mb-3">
-      <div class="profile-menu-item" onclick="showToast('Cartão Mastercard final 8821 ativo')">
-        <div class="menu-left">
-          <div class="menu-icon"><i class="ri-bank-card-line"></i></div>
-          <span>Formas de Pagamento (Pix / Cartão)</span>
+      <!-- Dashboard de Impacto Sustentável -->
+      <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Seu Impacto Sustentável</h3>
+      <div class="impact-dashboard-grid">
+        <div class="impact-metric-box">
+          <i class="ri-leaf-line" style="color: var(--primary); font-size: 18px;"></i>
+          <div class="metric-val">148.5 kg</div>
+          <div class="metric-label">CO₂ Evitado</div>
         </div>
-        <i class="ri-arrow-right-s-line text-muted"></i>
+        <div class="impact-metric-box">
+          <i class="ri-flashlight-line" style="color: #F59E0B; font-size: 18px;"></i>
+          <div class="metric-val">210 kWh</div>
+          <div class="metric-label">Energia Limpa</div>
+        </div>
+        <div class="impact-metric-box">
+          <i class="ri-charging-pile-line" style="color: #3B82F6; font-size: 18px;"></i>
+          <div class="metric-val">5</div>
+          <div class="metric-label">Sessões</div>
+        </div>
       </div>
-      <div class="profile-menu-item" onclick="showToast('Cadastre sua Wallbox e ganhe renda extra!')">
-        <div class="menu-left">
-          <div class="menu-icon" style="color: #F59E0B; background: #FEF3C7;"><i class="ri-home-wifi-line"></i></div>
-          <span>Tornar-se um Anfitrião (Host)</span>
+
+      <!-- Menu de Opções -->
+      <div class="profile-menu-list mb-3">
+        <div class="profile-menu-item" onclick="showToast('Cartão Mastercard final 8821 ativo')">
+          <div class="menu-left">
+            <div class="menu-icon"><i class="ri-bank-card-line"></i></div>
+            <span>Formas de Pagamento (Pix / Cartão)</span>
+          </div>
+          <i class="ri-arrow-right-s-line text-muted"></i>
         </div>
-        <i class="ri-arrow-right-s-line text-muted"></i>
-      </div>
-      <div class="profile-menu-item" onclick="showToast('Notificações push ativadas')">
-        <div class="menu-left">
-          <div class="menu-icon"><i class="ri-notification-3-line"></i></div>
-          <span>Notificações e Avisos</span>
+        <div class="profile-menu-item" onclick="showToast('Cadastre sua Wallbox e ganhe renda extra!')">
+          <div class="menu-left">
+            <div class="menu-icon" style="color: #F59E0B; background: #FEF3C7;"><i class="ri-home-wifi-line"></i></div>
+            <span>Tornar-se um Anfitrião (Host)</span>
+          </div>
+          <i class="ri-arrow-right-s-line text-muted"></i>
         </div>
-        <i class="ri-arrow-right-s-line text-muted"></i>
-      </div>
-      <div class="profile-menu-item" onclick="showToast('Suporte Recarga Fácil: suporte@recargafacil.com')">
-        <div class="menu-left">
-          <div class="menu-icon"><i class="ri-customer-service-2-line"></i></div>
-          <span>Ajuda & Suporte UPX 4</span>
+        <div class="profile-menu-item" onclick="showToast('Notificações push ativadas')">
+          <div class="menu-left">
+            <div class="menu-icon"><i class="ri-notification-3-line"></i></div>
+            <span>Notificações e Avisos</span>
+          </div>
+          <i class="ri-arrow-right-s-line text-muted"></i>
         </div>
-        <i class="ri-arrow-right-s-line text-muted"></i>
+        <div class="profile-menu-item" onclick="showToast('Suporte Recarga Fácil: suporte@recargafacil.com')">
+          <div class="menu-left">
+            <div class="menu-icon"><i class="ri-customer-service-2-line"></i></div>
+            <span>Ajuda & Suporte UPX 4</span>
+          </div>
+          <i class="ri-arrow-right-s-line text-muted"></i>
+        </div>
       </div>
     </div>
   `;
@@ -674,87 +811,89 @@ function renderScreenDetails() {
   }).join('');
 
   container.innerHTML = `
-    <!-- Hero Image -->
-    <div class="details-hero">
-      <img src="${wb.photo}" alt="${wb.title}" class="details-hero-img">
-      <div class="hero-overlay-actions">
-        <button class="btn-icon" onclick="goBack()"><i class="ri-arrow-left-line"></i></button>
-        <button class="btn-icon" onclick="toggleFavorite('${wb.id}')" title="Favoritar">
-          <i class="${isFav ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isFav ? 'color: #EF4444;' : ''}"></i>
-        </button>
-      </div>
-      <div class="hero-gradient"></div>
-      <div class="hero-badge-pill">
-        ${typeBadge}
-      </div>
-    </div>
-
-    <!-- Conteúdo dos Detalhes -->
-    <div class="details-content-body">
-      <div class="details-title-row">
-        <h1>${wb.title}</h1>
-        <div class="location-text">
-          <i class="ri-map-pin-2-fill text-primary"></i> ${wb.maskedAddress}
+    <div class="screen-scroll-body" style="padding-bottom: 85px;">
+      <!-- Hero Image -->
+      <div class="details-hero">
+        <img src="${wb.photo}" alt="${wb.title}" class="details-hero-img">
+        <div class="hero-overlay-actions">
+          <button class="btn-icon" onclick="goBack()"><i class="ri-arrow-left-line"></i></button>
+          <button class="btn-icon" onclick="toggleFavorite('${wb.id}')" title="Favoritar">
+            <i class="${isFav ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isFav ? 'color: #EF4444;' : ''}"></i>
+          </button>
+        </div>
+        <div class="hero-gradient"></div>
+        <div class="hero-badge-pill">
+          ${typeBadge}
         </div>
       </div>
 
-      <!-- Grid de Especificações Técnicas -->
-      <div class="specs-grid">
-        <div class="spec-box">
-          <i class="ri-flashlight-fill"></i>
-          <span class="spec-label">Potência</span>
-          <span class="spec-value">${wb.power}</span>
+      <!-- Conteúdo dos Detalhes -->
+      <div class="details-content-body">
+        <div class="details-title-row">
+          <h1>${wb.title}</h1>
+          <div class="location-text">
+            <i class="ri-map-pin-2-fill text-primary"></i> ${wb.maskedAddress}
+          </div>
         </div>
-        <div class="spec-box">
-          <i class="ri-plug-2-fill"></i>
-          <span class="spec-label">Plugue</span>
-          <span class="spec-value">${wb.plugType ? wb.plugType.split(' ')[0] : 'Tipo 2'}</span>
-        </div>
-        <div class="spec-box">
-          <i class="ri-money-dollar-circle-fill"></i>
-          <span class="spec-label">Preço/Hora</span>
-          <span class="spec-value text-secondary">R$ ${wb.pricePerHour.toFixed(2).replace('.', ',')}</span>
-        </div>
-      </div>
 
-      <!-- Card do Anfitrião -->
-      <div class="host-card">
-        <img src="${wb.hostAvatar}" alt="${wb.hostName}" class="host-avatar">
-        <div class="host-meta">
-          <div class="host-name">${wb.hostName}</div>
-          <div class="host-badge-line">
-            <span style="color: var(--accent-gold); font-weight: 700;">★ ${wb.hostRating ? wb.hostRating.toFixed(2) : '4.95'}</span>
-            <span>(${wb.totalReviews || 24} avaliações)</span>
-            ${superHostBadge}
+        <!-- Grid de Especificações Técnicas -->
+        <div class="specs-grid">
+          <div class="spec-box">
+            <i class="ri-flashlight-fill"></i>
+            <span class="spec-label">Potência</span>
+            <span class="spec-value">${wb.power}</span>
+          </div>
+          <div class="spec-box">
+            <i class="ri-plug-2-fill"></i>
+            <span class="spec-label">Plugue</span>
+            <span class="spec-value">${wb.plugType ? wb.plugType.split(' ')[0] : 'Tipo 2'}</span>
+          </div>
+          <div class="spec-box">
+            <i class="ri-money-dollar-circle-fill"></i>
+            <span class="spec-label">Preço/Hora</span>
+            <span class="spec-value text-secondary">R$ ${wb.pricePerHour.toFixed(2).replace('.', ',')}</span>
+          </div>
+        </div>
+
+        <!-- Card do Anfitrião -->
+        <div class="host-card">
+          <img src="${wb.hostAvatar}" alt="${wb.hostName}" class="host-avatar">
+          <div class="host-meta">
+            <div class="host-name">${wb.hostName}</div>
+            <div class="host-badge-line">
+              <span style="color: var(--accent-gold); font-weight: 700;">★ ${wb.hostRating ? wb.hostRating.toFixed(2) : '4.95'}</span>
+              <span>(${wb.totalReviews || 24} avaliações)</span>
+              ${superHostBadge}
+            </div>
+          </div>
+        </div>
+
+        <!-- Descrição do Espaço -->
+        <div class="card">
+          <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 6px;">Sobre este ponto</h3>
+          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">${wb.description}</p>
+        </div>
+
+        <!-- Comodidades Oferecidas -->
+        <div class="amenities-section">
+          <h3>Comodidades disponíveis</h3>
+          <div class="amenities-list-grid">
+            ${amenitiesHtml}
+          </div>
+        </div>
+
+        <!-- Regra de Segurança: Endereço Mascarado -->
+        <div class="security-alert-box">
+          <i class="ri-shield-keyhole-line"></i>
+          <div class="alert-text">
+            <strong>Privacidade e Segurança do Anfitrião:</strong><br>
+            O número exato da residência, código de portão e interfone serão revelados imediatamente após a confirmação do pagamento.
           </div>
         </div>
       </div>
-
-      <!-- Descrição do Espaço -->
-      <div class="card">
-        <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 6px;">Sobre este ponto</h3>
-        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">${wb.description}</p>
-      </div>
-
-      <!-- Comodidades Oferecidas -->
-      <div class="amenities-section">
-        <h3>Comodidades disponíveis</h3>
-        <div class="amenities-list-grid">
-          ${amenitiesHtml}
-        </div>
-      </div>
-
-      <!-- Regra de Segurança: Endereço Mascarado -->
-      <div class="security-alert-box">
-        <i class="ri-shield-keyhole-line"></i>
-        <div class="alert-text">
-          <strong>Privacidade e Segurança do Anfitrião:</strong><br>
-          O número exato da residência, código de portão e interfone serão revelados imediatamente após a confirmação do pagamento.
-        </div>
-      </div>
     </div>
 
-    <!-- Barra Fixa Inferior de Agendamento -->
+    <!-- Barra Fixa Inferior de Agendamento (Sempre Ancorada no Rodapé) -->
     <div class="sticky-bottom-action-bar">
       <div class="action-price-preview">
         <div class="price-amount">R$ ${wb.pricePerHour.toFixed(2).replace('.', ',')}<small style="font-size: 13px; font-weight: 500; color: var(--text-muted);">/hora</small></div>
@@ -767,6 +906,64 @@ function renderScreenDetails() {
   `;
 }
 
+// Funções auxiliares para cálculo dinâmico de janelas de horário
+function getWallboxStartTimes(wb) {
+  if (wb && wb.availableStartTimes && wb.availableStartTimes.length > 0) {
+    return wb.availableStartTimes;
+  }
+  if (wb && wb.availableSlots && wb.availableSlots.length > 0) {
+    return wb.availableSlots.map(slot => {
+      // Extrai o horário inicial da string (ex: "08:00 - 10:00" -> "08:00")
+      return slot.split('-')[0].trim();
+    });
+  }
+  return ["08:00", "10:00", "13:00", "15:00", "18:00"];
+}
+
+function formatSlotRange(startTimeStr, durationHours) {
+  if (!startTimeStr) startTimeStr = "08:00";
+  const parts = startTimeStr.split(':');
+  const startH = parseInt(parts[0], 10) || 0;
+  const startM = parseInt(parts[1] || '0', 10) || 0;
+  
+  const endH = startH + durationHours;
+  const startFormatted = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
+  const endFormatted = `${String(endH % 24).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
+  
+  return `${startFormatted} - ${endFormatted}`;
+}
+
+function renderTimeSlots() {
+  const wb = AppState.selectedWallbox || WALLBOXES_DATA[0];
+  const gridContainer = document.getElementById('booking-time-slots-grid');
+  if (!gridContainer) return;
+
+  const duration = AppState.booking.durationHours || 2;
+  const startTimes = getWallboxStartTimes(wb);
+
+  // Mantém ou inicializa o horário de início selecionado
+  let currentStart = AppState.booking.selectedStartTime;
+  if (!currentStart && AppState.booking.timeSlot) {
+    currentStart = AppState.booking.timeSlot.split('-')[0].trim();
+  }
+  if (!currentStart || !startTimes.includes(currentStart)) {
+    currentStart = startTimes[0] || "08:00";
+  }
+
+  AppState.booking.selectedStartTime = currentStart;
+  AppState.booking.timeSlot = formatSlotRange(currentStart, duration);
+
+  gridContainer.innerHTML = startTimes.map((startTime) => {
+    const slotLabel = formatSlotRange(startTime, duration);
+    const isSelected = startTime === currentStart;
+    return `
+      <button class="time-slot-btn ${isSelected ? 'selected' : ''}" onclick="selectTimeSlot('${slotLabel}', '${startTime}', this)">
+        <i class="ri-time-line"></i> ${slotLabel}
+      </button>
+    `;
+  }).join('');
+}
+
 // Tela 3: Agendamento de Horário
 function renderScreenBooking() {
   const wb = AppState.selectedWallbox || WALLBOXES_DATA[0];
@@ -775,6 +972,9 @@ function renderScreenBooking() {
 
   AppState.booking.wallboxId = wb.backendId || 1;
   AppState.booking.pricePerHour = wb.pricePerHour;
+  if (!AppState.booking.durationHours) {
+    AppState.booking.durationHours = 2;
+  }
   updateBookingCalculations();
 
   container.innerHTML = `
@@ -784,7 +984,7 @@ function renderScreenBooking() {
       <div style="width: 40px;"></div>
     </div>
 
-    <div style="padding: 16px 16px 90px 16px;">
+    <div class="screen-scroll-body" style="padding: 16px 16px 95px 16px;">
       <!-- Resumo do Ponto Selecionado -->
       <div class="card mb-3 d-flex gap-3 align-center">
         <img src="${wb.photo}" style="width: 60px; height: 60px; border-radius: var(--radius-md); object-fit: cover;">
@@ -817,22 +1017,18 @@ function renderScreenBooking() {
       <div class="booking-section-card">
         <div class="section-label"><i class="ri-time-line text-primary"></i> 2. Tempo de Recarga Desejado</div>
         <div class="duration-selector-row">
-          <div class="duration-chip" onclick="selectBookingDuration(1, this)">1 Hora</div>
-          <div class="duration-chip selected" onclick="selectBookingDuration(2, this)">2 Horas</div>
-          <div class="duration-chip" onclick="selectBookingDuration(3, this)">3 Horas</div>
-          <div class="duration-chip" onclick="selectBookingDuration(4, this)">4 Horas</div>
+          <div class="duration-chip ${AppState.booking.durationHours === 1 ? 'selected' : ''}" onclick="selectBookingDuration(1, this)">1 Hora</div>
+          <div class="duration-chip ${AppState.booking.durationHours === 2 ? 'selected' : ''}" onclick="selectBookingDuration(2, this)">2 Horas</div>
+          <div class="duration-chip ${AppState.booking.durationHours === 3 ? 'selected' : ''}" onclick="selectBookingDuration(3, this)">3 Horas</div>
+          <div class="duration-chip ${AppState.booking.durationHours === 4 ? 'selected' : ''}" onclick="selectBookingDuration(4, this)">4 Horas</div>
         </div>
       </div>
 
       <!-- Grade de Janelas de Horário -->
       <div class="booking-section-card">
         <div class="section-label"><i class="ri-sun-cloudy-line text-primary"></i> 3. Selecione o Horário de Chegada</div>
-        <div class="time-slots-grid">
-          ${(wb.availableSlots || ["08:00 - 10:00", "10:00 - 12:00", "14:00 - 16:00", "16:00 - 18:00", "19:00 - 21:00"]).map((slot, index) => `
-            <button class="time-slot-btn ${index === 1 ? 'selected' : ''}" onclick="selectTimeSlot('${slot}', this)">
-              <i class="ri-time-line"></i> ${slot}
-            </button>
-          `).join('')}
+        <div class="time-slots-grid" id="booking-time-slots-grid">
+          <!-- Gerado dinamicamente com base nas horas selecionadas -->
         </div>
       </div>
 
@@ -846,13 +1042,13 @@ function renderScreenBooking() {
             </div>
           </div>
           <div style="text-align: right; font-size: 12px; color: var(--text-muted);">
-            <span id="booking-hours-preview">2h</span> de recarga a ${wb.power}
+            <span id="booking-hours-preview">${AppState.booking.durationHours}h</span> de recarga a ${wb.power}
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Barra Fixa Inferior de Checkout -->
+    <!-- Barra Fixa Inferior de Checkout (Sempre Ancorada no Rodapé) -->
     <div class="sticky-bottom-action-bar">
       <div class="action-price-preview">
         <div id="booking-action-total" class="price-amount">R$ ${AppState.booking.total.toFixed(2).replace('.', ',')}</div>
@@ -863,6 +1059,8 @@ function renderScreenBooking() {
       </button>
     </div>
   `;
+
+  renderTimeSlots();
 }
 
 async function handleConfirmBooking() {
@@ -882,14 +1080,24 @@ function selectBookingDate(dateText, element) {
 function selectBookingDuration(hours, element) {
   AppState.booking.durationHours = hours;
   document.querySelectorAll('.duration-chip').forEach(el => el.classList.remove('selected'));
-  element.classList.add('selected');
+  if (element) {
+    element.classList.add('selected');
+  }
   updateBookingCalculations();
+  renderTimeSlots();
 }
 
-function selectTimeSlot(slotText, element) {
+function selectTimeSlot(slotText, startTime, element) {
   AppState.booking.timeSlot = slotText;
+  if (startTime) {
+    AppState.booking.selectedStartTime = startTime;
+  } else {
+    AppState.booking.selectedStartTime = slotText.split('-')[0].trim();
+  }
   document.querySelectorAll('.time-slot-btn').forEach(el => el.classList.remove('selected'));
-  element.classList.add('selected');
+  if (element) {
+    element.classList.add('selected');
+  }
 }
 
 function updateBookingCalculations() {
@@ -923,7 +1131,7 @@ function renderScreenCheckout() {
       <div style="width: 40px;"></div>
     </div>
 
-    <div style="padding: 16px 16px 90px 16px;">
+    <div class="screen-scroll-body" style="padding: 16px 16px 95px 16px;">
       <!-- Resumo da Reserva -->
       <div class="checkout-summary-card">
         <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 10px;">Resumo do Agendamento</h3>
@@ -1020,7 +1228,7 @@ function renderScreenCheckout() {
       </div>
     </div>
 
-    <!-- Barra Fixa Inferior de Confirmação -->
+    <!-- Barra Fixa Inferior de Confirmação (Sempre Ancorada no Rodapé) -->
     <div class="sticky-bottom-action-bar">
       <button id="btn-confirm-payment" class="btn btn-primary btn-block" onclick="handleProcessPayment()">
         <i class="ri-check-double-line"></i> Confirmar e Pagar R$ ${AppState.booking.total.toFixed(2).replace('.', ',')}
@@ -1097,71 +1305,73 @@ function renderScreenSuccess() {
   if (!container) return;
 
   container.innerHTML = `
-    <!-- Header de Sucesso -->
-    <div class="success-header-banner">
-      <div class="success-icon-circle">
-        <i class="ri-check-line"></i>
-      </div>
-      <h2>Recarga Confirmada!</h2>
-      <p>Sua vaga está garantida. O anfitrião foi avisado.</p>
-    </div>
-
-    <!-- CARD DE ENDEREÇO TOTALMENTE DESBLOQUEADO -->
-    <div class="unlocked-address-card">
-      <div class="unlocked-header-badge">
-        <i class="ri-lock-unlock-fill"></i> Endereço e Acesso Desbloqueados
-      </div>
-      
-      <div class="full-address-text">
-        ${addr.street}, nº ${addr.number}
-      </div>
-      <div class="complement-text">
-        ${addr.complement} • Bairro ${addr.neighborhood}<br>
-        CEP: ${addr.zipCode} — ${addr.city}/${addr.state}
+    <div class="screen-scroll-body" style="padding: 20px 16px 30px 16px;">
+      <!-- Header de Sucesso -->
+      <div class="success-header-banner">
+        <div class="success-icon-circle">
+          <i class="ri-check-line"></i>
+        </div>
+        <h2>Recarga Confirmada!</h2>
+        <p>Sua vaga está garantida. O anfitrião foi avisado.</p>
       </div>
 
-      <!-- Instruções Exclusivas de Acesso ao Imóvel -->
-      <div class="access-instructions-box">
-        <strong><i class="ri-information-line"></i> Instruções do Anfitrião:</strong><br>
-        ${addr.accessInstructions}
-      </div>
+      <!-- CARD DE ENDEREÇO TOTALMENTE DESBLOQUEADO -->
+      <div class="unlocked-address-card">
+        <div class="unlocked-header-badge">
+          <i class="ri-lock-unlock-fill"></i> Endereço e Acesso Desbloqueados
+        </div>
+        
+        <div class="full-address-text">
+          ${addr.street}, nº ${addr.number}
+        </div>
+        <div class="complement-text">
+          ${addr.complement} • Bairro ${addr.neighborhood}<br>
+          CEP: ${addr.zipCode} — ${addr.city}/${addr.state}
+        </div>
 
-      <!-- Ações de Rota (Waze / Google Maps) -->
-      <div class="route-actions-row">
-        <a href="https://waze.com/ul?ll=${wb.lat},${wb.lng}&navigate=yes" target="_blank" class="btn btn-waze">
-          <i class="ri-navigation-line"></i> Abrir no Waze
+        <!-- Instruções Exclusivas de Acesso ao Imóvel -->
+        <div class="access-instructions-box">
+          <strong><i class="ri-information-line"></i> Instruções do Anfitrião:</strong><br>
+          ${addr.accessInstructions}
+        </div>
+
+        <!-- Ações de Rota (Waze / Google Maps) -->
+        <div class="route-actions-row">
+          <a href="https://waze.com/ul?ll=${wb.lat},${wb.lng}&navigate=yes" target="_blank" class="btn btn-waze">
+            <i class="ri-navigation-line"></i> Abrir no Waze
+          </a>
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${wb.lat},${wb.lng}" target="_blank" class="btn btn-gmaps">
+            <i class="ri-map-pin-line"></i> Google Maps
+          </a>
+        </div>
+
+        <!-- Contato Direto com Anfitrião -->
+        <a href="https://api.whatsapp.com/send?phone=${addr.hostPhone}&text=Ol%C3%A1%20${wb.hostName},%20acabei%20de%20reservar%20a%20Wallbox%20pelo%20Recarga%20F%C3%A1cil!" target="_blank" class="btn btn-whatsapp">
+          <i class="ri-whatsapp-line"></i> Chamar ${wb.hostName ? wb.hostName.split(' ')[0] : 'Anfitrião'} no WhatsApp
         </a>
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${wb.lat},${wb.lng}" target="_blank" class="btn btn-gmaps">
-          <i class="ri-map-pin-line"></i> Google Maps
-        </a>
       </div>
 
-      <!-- Contato Direto com Anfitrião -->
-      <a href="https://api.whatsapp.com/send?phone=${addr.hostPhone}&text=Ol%C3%A1%20${wb.hostName},%20acabei%20de%20reservar%20a%20Wallbox%20pelo%20Recarga%20F%C3%A1cil!" target="_blank" class="btn btn-whatsapp">
-        <i class="ri-whatsapp-line"></i> Chamar ${wb.hostName ? wb.hostName.split(' ')[0] : 'Anfitrião'} no WhatsApp
-      </a>
-    </div>
-
-    <!-- Voucher / Código de Reserva -->
-    <div class="checkin-voucher">
-      <div>
-        <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">CÓDIGO DE IDENTIFICAÇÃO</div>
-        <div class="voucher-code">${AppState.booking.reservationCode}</div>
+      <!-- Voucher / Código de Reserva -->
+      <div class="checkin-voucher">
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">CÓDIGO DE IDENTIFICAÇÃO</div>
+          <div class="voucher-code">${AppState.booking.reservationCode}</div>
+        </div>
+        <div style="text-align: right; font-size: 12px;">
+          <strong>${AppState.booking.date}</strong><br>
+          <span class="text-muted">${AppState.booking.timeSlot}</span>
+        </div>
       </div>
-      <div style="text-align: right; font-size: 12px;">
-        <strong>${AppState.booking.date}</strong><br>
-        <span class="text-muted">${AppState.booking.timeSlot}</span>
-      </div>
-    </div>
 
-    <!-- Botões de Ação -->
-    <div class="d-flex gap-2 mt-4">
-      <button class="btn btn-secondary" style="flex: 1;" onclick="navigateTo('screen-bookings-list')">
-        <i class="ri-calendar-todo-line"></i> Ver Recargas
-      </button>
-      <button class="btn btn-primary" style="flex: 1;" onclick="navigateTo('screen-search')">
-        <i class="ri-map-pin-2-line"></i> Ir para Mapa
-      </button>
+      <!-- Botões de Ação -->
+      <div class="d-flex gap-2 mt-4">
+        <button class="btn btn-secondary" style="flex: 1;" onclick="navigateTo('screen-bookings-list')">
+          <i class="ri-calendar-todo-line"></i> Ver Recargas
+        </button>
+        <button class="btn btn-primary" style="flex: 1;" onclick="navigateTo('screen-search')">
+          <i class="ri-map-pin-2-line"></i> Ir para Mapa
+        </button>
+      </div>
     </div>
   `;
 }

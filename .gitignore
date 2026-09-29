@@ -31,3 +31,9 @@ bin/
 
 ### Maven ###
 target/
+
+### IDE & Local ###
+.idea/
+.ai/
+*.iml
+.DS_Store
