@@ -835,7 +835,7 @@
             <i class="ri-money-dollar-circle-line" style="color: var(--primary); font-size: 18px;"></i>
           </div>
           <div class="kpi-value" id="kpi-total-recebido" style="color: var(--primary);">R$ 0,00</div>
-          <div class="kpi-sub">Líquido a receber (75% das recargas)</div>
+          <div class="kpi-sub" id="kpi-sub-repasse">Líquido a receber (75% das recargas)</div>
         </div>
 
         <div class="kpi-card">
@@ -1280,6 +1280,30 @@
     const API_BASE = 'http://localhost:8080/api';
     let currentHost = null;
 
+    // Configuração da Plataforma (parametrizada dinamicamente pelo Admin)
+    function getPlatformConfig() {
+      try {
+        const raw = localStorage.getItem('recarga_facil_config');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return {
+            tarifaBaseHora: Number(parsed.tarifaBaseHora) || 15.00,
+            taxaPlataforma: Number(parsed.taxaPlataforma) || 25.0,
+            toleranciaMinutos: Number(parsed.toleranciaMinutos) || 15,
+            multaNoShow: Number(parsed.multaNoShow) || 10.0
+          };
+        }
+      } catch (e) {
+        console.warn("Erro ao ler recarga_facil_config:", e);
+      }
+      return {
+        tarifaBaseHora: 15.00,
+        taxaPlataforma: 25.0,
+        toleranciaMinutos: 15,
+        multaNoShow: 10.0
+      };
+    }
+
     // Inicialização
     document.addEventListener('DOMContentLoaded', () => {
       const savedHost = sessionStorage.getItem('recarga_facil_host');
@@ -1489,7 +1513,8 @@
       const modelo = document.getElementById('host-cad-modelo').value.trim();
       const potencia = document.getElementById('host-cad-potencia').value;
       const precoHoraEl = document.getElementById('host-cad-preco');
-      const precoHora = precoHoraEl ? parseFloat(precoHoraEl.value) || 15.00 : 15.00;
+      const cfg = getPlatformConfig();
+      const precoHora = precoHoraEl ? (parseFloat(precoHoraEl.value) || cfg.tarifaBaseHora) : cfg.tarifaBaseHora;
       const fotoUrl = document.getElementById('host-cad-foto').value.trim();
 
       const tipoAmbiente = document.getElementById('host-cad-ambiente').value;
@@ -1706,6 +1731,14 @@
         avatarHeader.src = currentHost.fotoUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80';
       }
 
+      // Atualizar subtítulo de repasse dinamicamente com base nas configurações da plataforma
+      const cfg = getPlatformConfig();
+      const subRepasse = document.getElementById('kpi-sub-repasse');
+      if (subRepasse) {
+        const repassePct = (100 - cfg.taxaPlataforma).toFixed(0);
+        subRepasse.innerText = `Líquido a receber (${repassePct}% das recargas)`;
+      }
+
       carregarDadosDoHost();
       carregarDadosPerfilHost();
     }
@@ -1855,7 +1888,8 @@
       grid.innerHTML = wallboxes.map(wb => {
         const local = wb.local || {};
         const potenciaFormatada = wb.potencia ? wb.potencia.replace('P_', '').replace('KW', ' kW') : '7.4 kW';
-        const preco = Number(wb.precoHora || 15).toFixed(2).replace('.', ',');
+        const cfg = getPlatformConfig();
+        const preco = Number(wb.precoHora || cfg.tarifaBaseHora || 15).toFixed(2).replace('.', ',');
         const isDisponivel = (wb.status === 'DISPONIVEL');
         const statusBadgeClass = isDisponivel ? 'status-concluida' : (wb.status === 'MANUTENCAO' ? 'status-pendente' : 'status-cancelada');
 
@@ -2199,7 +2233,7 @@
         idHost: currentHost.id,
         modelo: document.getElementById('novo-modelo').value.trim(),
         potencia: document.getElementById('novo-potencia').value,
-        precoHora: 15.00,
+        precoHora: getPlatformConfig().tarifaBaseHora,
         tipoAmbiente: document.getElementById('novo-ambiente').value,
         enderecoCompleto: document.getElementById('novo-endereco').value.trim(),
         latitude: parseFloat(document.getElementById('novo-lat').value),
@@ -2235,6 +2269,19 @@
         alert("Erro na conexão com o servidor.");
       }
     }
+
+    // Sincronização em tempo real caso o Admin atualize parâmetros
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'recarga_facil_config') {
+        const cfg = getPlatformConfig();
+        const subRepasse = document.getElementById('kpi-sub-repasse');
+        if (subRepasse) {
+          const repassePct = (100 - cfg.taxaPlataforma).toFixed(0);
+          subRepasse.innerText = `Líquido a receber (${repassePct}% das recargas)`;
+        }
+        if (currentHost) carregarDadosDoHost();
+      }
+    });
   </script>
 </body>
 </html>

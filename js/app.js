@@ -54,6 +54,22 @@ const AppState = {
   markers: []
 };
 
+// ==========================================
+// CONFIGURAÇÃO DINÂMICA DA REDE (ADMIN SANDBOX)
+// ==========================================
+function getPlatformConfig() {
+  const saved = localStorage.getItem('recarga_facil_config');
+  if (saved) {
+    try { return JSON.parse(saved); } catch(e) {}
+  }
+  return {
+    tarifaBaseHora: 15.00,
+    taxaPlataforma: 25.0,
+    toleranciaMinutos: 15,
+    multaNoShow: 10.0
+  };
+}
+
 // Inicialização após carregamento do DOM
 document.addEventListener('DOMContentLoaded', () => {
   loadSavedFavorites();
@@ -61,6 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initApp() {
+  const cfg = getPlatformConfig();
+  AppState.booking.pricePerHour = cfg.tarifaBaseHora || 15.00;
+  AppState.booking.platformFeeRate = (cfg.taxaPlataforma || 25) / 100;
+
   initTimeStatusBar();
   initAmenitiesFilters();
   initMap();
@@ -1563,6 +1583,12 @@ function renderScreenBookingContent(wb) {
   const container = document.getElementById('booking-content-placeholder');
   if (!container) return;
 
+  const cfg = getPlatformConfig();
+  wb.pricePerHour = cfg.tarifaBaseHora || wb.pricePerHour || 15.00;
+  AppState.booking.pricePerHour = wb.pricePerHour;
+  AppState.booking.platformFeeRate = (cfg.taxaPlataforma || 25) / 100;
+  updateBookingCalculations();
+
   const diasSemanaList = AppState.diasSemanaDisponiveis || [];
   const selectedIndex = AppState.booking.selectedDayIndex || 0;
   const diaSelecionado = diasSemanaList[selectedIndex] || diasSemanaList[0];
@@ -1678,13 +1704,21 @@ function renderScreenBookingContent(wb) {
           </div>
         </div>
       </div>
+
+      <!-- AVISO DE TOLERÂNCIA DE HORÁRIO E MULTA -->
+      <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px 14px; margin-top: 14px; display: flex; gap: 10px; align-items: flex-start;">
+        <i class="ri-time-line" style="font-size: 20px; color: #D97706; flex-shrink: 0; margin-top: 2px;"></i>
+        <div id="booking-multa-box" style="font-size: 12px; color: #92400E; line-height: 1.45;">
+          <strong>Tolerância de Chegada:</strong> Você tem até <strong>${cfg.toleranciaMinutos} minutos de tolerância</strong> após o horário agendado para conectar o veículo. Em caso de não comparecimento (No-Show), a vaga é liberada e incide <strong>multa compensatória de ${cfg.multaNoShow}% (R$ ${((AppState.booking.total * cfg.multaNoShow) / 100).toFixed(2).replace('.', ',')})</strong> para o anfitrião.
+        </div>
+      </div>
     </div>
 
     <!-- Barra Fixa Inferior de Checkout -->
     <div class="sticky-bottom-action-bar">
       <div class="action-price-preview">
         <div id="booking-action-total" class="price-amount">R$ ${AppState.booking.total.toFixed(2).replace('.', ',')}</div>
-        <div class="price-label">Inclui taxa de 25% da plataforma</div>
+        <div class="price-label">Inclui taxa de ${cfg.taxaPlataforma}% da plataforma</div>
       </div>
       <button class="btn btn-primary" id="btn-booking-submit" ${!diaSelecionado.estaAtivo ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} onclick="handleConfirmBooking()">
         Ir para Pagamento <i class="ri-arrow-right-line"></i>
@@ -1828,12 +1862,21 @@ function updateBookingCalculations() {
   if (subtotalEl) subtotalEl.textContent = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
   if (actionTotalEl) actionTotalEl.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
   if (hoursPreviewEl) hoursPreviewEl.textContent = `${AppState.booking.durationHours}h`;
+
+  // Atualiza o valor em reais da multa dinamicamente conforme a duração e configuração do Admin
+  const cfg = getPlatformConfig();
+  const multaValor = ((total * cfg.multaNoShow) / 100).toFixed(2).replace('.', ',');
+  const multaBoxEl = document.getElementById('booking-multa-box');
+  if (multaBoxEl) {
+    multaBoxEl.innerHTML = `<strong>Tolerância de Chegada:</strong> Você tem até <strong>${cfg.toleranciaMinutos} minutos de tolerância</strong> após o horário agendado para conectar o veículo. Em caso de não comparecimento (No-Show), a vaga é liberada e incide <strong>multa compensatória de ${cfg.multaNoShow}% (R$ ${multaValor})</strong> para o anfitrião.`;
+  }
 }
 
-// Tela 4: Pagamento e Checkout (Com Taxa de 25%)
+// Tela 4: Pagamento e Checkout
 function renderScreenCheckout() {
   const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
   if (!wb) return;
+  const cfg = getPlatformConfig();
   const container = document.getElementById('checkout-content-placeholder');
   if (!container) return;
 
@@ -1863,14 +1906,14 @@ function renderScreenCheckout() {
 
         <div class="receipt-divider"></div>
 
-        <!-- Discriminação de Valores com Taxa de 25% -->
+        <!-- Discriminação de Valores com Taxa -->
         <div class="receipt-row">
           <span>Subtotal (${AppState.booking.durationHours}h × R$ ${wb.pricePerHour.toFixed(2).replace('.', ',')}):</span>
           <span>R$ ${AppState.booking.subtotal.toFixed(2).replace('.', ',')}</span>
         </div>
         
         <div class="receipt-row highlight-fee">
-          <span><i class="ri-shield-check-line"></i> Taxa da Plataforma (25%):</span>
+          <span><i class="ri-shield-check-line"></i> Taxa da Plataforma (${cfg.taxaPlataforma}%):</span>
           <span>+ R$ ${AppState.booking.platformFee.toFixed(2).replace('.', ',')}</span>
         </div>
 
@@ -1884,6 +1927,11 @@ function renderScreenCheckout() {
         <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 10px 12px; margin-top: 12px; font-size: 11px; color: #065F46; display: flex; gap: 8px; align-items: center;">
           <i class="ri-shield-keyhole-fill" style="font-size: 18px; color: #059669; flex-shrink: 0;"></i>
           <span><strong>Regra de Segurança:</strong> O endereço exato com número e as instruções de acesso ao imóvel serão <strong>desbloqueados imediatamente</strong> na tela de confirmação após a aprovação do pagamento.</span>
+        </div>
+
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 11px; color: #92400E; display: flex; gap: 8px; align-items: center;">
+          <i class="ri-time-line" style="font-size: 18px; color: #D97706; flex-shrink: 0;"></i>
+          <span><strong>Política de Chegada & Multa:</strong> Tolerância de até <strong>${cfg.toleranciaMinutos} minutos</strong> para conectar o veículo. Em caso de não comparecimento no local (No-Show), a vaga é reaberta e incide <strong>multa compensatória de ${cfg.multaNoShow}% (R$ ${((AppState.booking.total * cfg.multaNoShow) / 100).toFixed(2).replace('.', ',')})</strong> sobre o valor agendado.</span>
         </div>
       </div>
 
@@ -2011,6 +2059,7 @@ async function handleProcessPayment() {
 function renderScreenSuccess() {
   const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
   if (!wb) return;
+  const cfg = getPlatformConfig();
   const addr = wb.unlockedAddress || {
     street: "Rua Antonio Perez Hernandez",
     number: "480",
@@ -2081,6 +2130,14 @@ function renderScreenSuccess() {
         <div style="text-align: right; font-size: 12px;">
           <strong>${AppState.booking.date}</strong><br>
           <span class="text-muted">${AppState.booking.timeSlot}</span>
+        </div>
+      </div>
+
+      <!-- Lembrete de Tolerância de Chegada e Multa -->
+      <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 10px 14px; margin-top: 14px; font-size: 12px; color: #92400E; display: flex; align-items: flex-start; gap: 10px;">
+        <i class="ri-time-line" style="font-size: 20px; color: #D97706; flex-shrink: 0; margin-top: 2px;"></i>
+        <div style="line-height: 1.45;">
+          <strong>Lembrete de Chegada & Tolerância:</strong> Apresente-se no local em até <strong>${cfg.toleranciaMinutos} minutos</strong> do horário marcado (${AppState.booking.timeSlot}). Em caso de não comparecimento (No-Show), a vaga é reaberta com incidência de <strong>multa compensatória de ${cfg.multaNoShow}% (R$ ${((AppState.booking.total * cfg.multaNoShow) / 100).toFixed(2).replace('.', ',')})</strong> destinada ao anfitrião.
         </div>
       </div>
 
@@ -2203,3 +2260,16 @@ function bindDesktopToggle() {
     });
   });
 }
+
+// Sincronização em tempo real com alterações de parâmetros salvas no painel do Administrador
+window.addEventListener('storage', (e) => {
+  if (e.key === 'recarga_facil_config') {
+    const cfg = getPlatformConfig();
+    AppState.booking.platformFeeRate = cfg.taxaPlataforma / 100;
+    if (document.getElementById('screen-booking')?.classList.contains('active')) {
+      renderScreenBooking();
+    } else if (document.getElementById('screen-checkout')?.classList.contains('active')) {
+      renderScreenCheckout();
+    }
+  }
+});

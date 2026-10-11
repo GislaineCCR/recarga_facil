@@ -533,6 +533,9 @@
         <button class="tab-btn" onclick="switchTab('tab-pagamentos')">
           <i class="ri-bank-card-line"></i> Transações & Repasses
         </button>
+        <button class="tab-btn" onclick="switchTab('tab-parametros')">
+          <i class="ri-settings-4-line"></i> Parâmetros & Tarifas
+        </button>
       </aside>
 
       <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
@@ -829,54 +832,215 @@
         </section>
 
         <!-- ==========================================
-             ABA 8: TRANSAÇÕES & REPASSES
+             ABA 8: TRANSAÇÕES & REPASSES (SANDBOX P2P)
              ========================================== -->
         <section id="tab-pagamentos" class="admin-section">
           <div class="section-header">
             <div>
-              <h2><i class="ri-money-dollar-box-line" style="color:var(--primary);"></i> Transações & Repasses Financeiros</h2>
-              <p>Gestão financeira com cálculo automático da taxa de 25% da plataforma.</p>
+              <h2><i class="ri-money-dollar-box-line" style="color:var(--primary);"></i> Transações, Conciliação & Repasses (Split P2P)</h2>
+              <p>Ambiente de simulação da regra de negócio RN03 (Split de 25% para a plataforma e repasse líquido de 75% ao Host via PIX).</p>
             </div>
           </div>
 
+          <!-- BANNER EDUCATIVO / REGRAS DE NEGÓCIO DA PLATAFORMA -->
+          <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(0, 208, 132, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+              <span style="background: rgba(0, 208, 132, 0.2); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
+                <i class="ri-shield-keyhole-line"></i> Sandbox Financeiro & Regras de Negócio
+              </span>
+              <span style="color: var(--text-muted); font-size: 12px;">Arquitetura Financeira do Projeto Acadêmico</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; font-size: 13px;">
+              <div style="background: rgba(30, 41, 59, 0.6); padding: 14px; border-radius: 8px; border-left: 3px solid var(--primary);">
+                <div style="font-weight: 700; color: #fff; margin-bottom: 4px;"><i class="ri-pie-chart-2-line" style="color:var(--primary);"></i> Regra RN03 (Split Automático 25% / 75%)</div>
+                <p style="color: var(--text-muted); line-height: 1.5; margin: 0;">
+                  A tarifa base é de <strong>R$ 15,00/hora</strong>. O sistema retém <strong>25%</strong> (R$ 3,75/h) para custeio operacional da Recarga Fácil e programa o repasse de <strong>75% líquidos</strong> (R$ 11,25/h) para a conta do Anfitrião via PIX.
+                </p>
+              </div>
+
+              <div style="background: rgba(30, 41, 59, 0.6); padding: 14px; border-radius: 8px; border-left: 3px solid #38BDF8;">
+                <div style="font-weight: 700; color: #fff; margin-bottom: 4px;"><i class="ri-lock-2-line" style="color:#38BDF8;"></i> Regra RN01 (Segurança & Liberação)</div>
+                <p style="color: var(--text-muted); line-height: 1.5; margin: 0;">
+                  Por segurança e privacidade residencial, o endereço completo e as instruções de acesso só são revelados ao motorista no app após o status constar como <strong>APROVADO</strong>.
+                </p>
+              </div>
+
+              <div style="background: rgba(30, 41, 59, 0.6); padding: 14px; border-radius: 8px; border-left: 3px solid #F59E0B;">
+                <div style="font-weight: 700; color: #fff; margin-bottom: 4px;"><i class="ri-bank-card-line" style="color:#F59E0B;"></i> Simulação Sem Gateway Real</div>
+                <p style="color: var(--text-muted); line-height: 1.5; margin: 0;">
+                  Por se tratar de um protótipo acadêmico (MVP), a plataforma opera em modo <em>Sandbox</em>, permitindo simular a aprovação de cobranças, cancelamentos (No-Show) e repasses sem adquirentes bancárias externas.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARDS DE RESUMO FINANCEIRO (KPIS DO SPLIT) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div style="background: var(--bg-card); border: 1px solid var(--border-dark); padding: 16px; border-radius: 10px;">
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Volume Bruto Movimentado</div>
+              <div id="sandbox-total-bruto" style="font-size: 22px; font-weight: 800; color: #fff; margin-top: 4px;">R$ 0,00</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Total pago pelos motoristas</div>
+            </div>
+
+            <div style="background: var(--bg-card); border: 1px solid var(--border-dark); padding: 16px; border-radius: 10px;">
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Receita Plataforma (25%)</div>
+              <div id="sandbox-receita-plataforma" style="font-size: 22px; font-weight: 800; color: var(--primary); margin-top: 4px;">R$ 0,00</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Margem bruta retida</div>
+            </div>
+
+            <div style="background: var(--bg-card); border: 1px solid var(--border-dark); padding: 16px; border-radius: 10px;">
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Repasse Líquido aos Hosts (75%)</div>
+              <div id="sandbox-repasse-hosts" style="font-size: 22px; font-weight: 800; color: #38BDF8; margin-top: 4px;">R$ 0,00</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Transferências via PIX aos donos</div>
+            </div>
+
+            <div style="background: var(--bg-card); border: 1px solid var(--border-dark); padding: 16px; border-radius: 10px;">
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Transações Registradas</div>
+              <div id="sandbox-total-transacoes" style="font-size: 22px; font-weight: 800; color: #F59E0B; margin-top: 4px;">0</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Pagamentos no banco de dados</div>
+            </div>
+          </div>
+
+          <!-- FORMULÁRIO DE SIMULAÇÃO DE PAGAMENTO & SPLIT -->
           <div class="content-box">
-            <h3><i class="ri-add-circle-line"></i> Processar Novo Pagamento</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+              <h3 style="margin: 0;"><i class="ri-flashlight-line" style="color:var(--primary);"></i> Simular Novo Pagamento & Conciliação de Split</h3>
+              <span style="font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px;">
+                Cálculo instantâneo baseado em R$ 15,00/h
+              </span>
+            </div>
+
             <form onsubmit="handleCadastrarPagamento(event)">
-              <div class="form-grid">
+              <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr;">
                 <div class="form-group">
-                  <label>Reserva Vinculada</label>
-                  <select id="pag-reserva-select" class="form-control" required></select>
+                  <label>Reserva do Motorista</label>
+                  <select id="pag-reserva-select" class="form-control" required onchange="aoSelecionarReservaSimulacao()"></select>
                 </div>
                 <div class="form-group">
                   <label>Valor Total (R$)</label>
-                  <input type="number" step="0.01" id="pag-total" class="form-control" required placeholder="37.50" oninput="calcularTaxaAutomatica()">
+                  <input type="number" step="0.01" id="pag-total" class="form-control" required placeholder="30.00" oninput="calcularTaxaAutomatica()">
                 </div>
                 <div class="form-group">
-                  <label>Taxa da Plataforma (25% Automática)</label>
-                  <input type="number" step="0.01" id="pag-taxa" class="form-control" required placeholder="7.50" readonly style="opacity:0.8;">
+                  <label>Taxa Plataforma (25%)</label>
+                  <input type="text" id="pag-taxa" class="form-control" readonly style="background:#0F172A; color:var(--primary); font-weight:700;">
+                </div>
+                <div class="form-group">
+                  <label>Repasse Host (75% PIX)</label>
+                  <input type="text" id="pag-liquido" class="form-control" readonly style="background:#0F172A; color:#38BDF8; font-weight:700;">
                 </div>
               </div>
-              <button type="submit" class="btn-submit"><i class="ri-secure-payment-line"></i> Gravar Pagamento</button>
+              <button type="submit" class="btn-submit" style="display: inline-flex; align-items: center; gap: 8px;">
+                <i class="ri-check-double-line"></i> Simular Pagamento Aprovado & Executar Split
+              </button>
             </form>
           </div>
 
+          <!-- TABELA DE TRANSAÇÕES E REPASSES -->
           <div class="content-box">
-            <h3><i class="ri-list-check"></i> Histórico de Transações</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+              <h3 style="margin: 0;"><i class="ri-list-check" style="color:var(--primary);"></i> Registro de Transações & Detalhamento do Split PIX</h3>
+              <button type="button" class="btn" style="background:#0F172A; border:1px solid var(--border-dark); font-size:12px; color:#fff;" onclick="loadPagamentos()">
+                <i class="ri-refresh-line"></i> Atualizar Tabela
+              </button>
+            </div>
             <div class="table-responsive">
               <table class="data-table">
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>ID Reserva</th>
+                    <th>Reserva</th>
+                    <th>Motorista</th>
+                    <th>Anfitrião / Chave PIX</th>
                     <th>Valor Total</th>
                     <th>Taxa 25%</th>
-                    <th>Status Pagamento</th>
-                    <th>Ações de Status</th>
+                    <th>Repasse Host (75%)</th>
+                    <th>Status Conciliação</th>
+                    <th>Ações (Simular Status)</th>
                   </tr>
                 </thead>
-                <tbody id="table-pagamentos"><tr><td colspan="6">Carregando...</td></tr></tbody>
+                <tbody id="table-pagamentos"><tr><td colspan="9" style="text-align:center; padding:20px;">Carregando...</td></tr></tbody>
               </table>
             </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             ABA 9: PARÂMETROS GLOBAIS & TARIFAS (RN03 & RN04)
+             ========================================== -->
+        <section id="tab-parametros" class="admin-section">
+          <div class="section-header">
+            <div>
+              <h2><i class="ri-settings-4-line" style="color:var(--primary);"></i> Parâmetros Globais de Negócio & Tarifas</h2>
+              <p>Gerencie a tarifa base por hora, a taxa de intermediação e as políticas de tolerância e multa de No-Show.</p>
+            </div>
+          </div>
+
+          <div class="content-box">
+            <h3><i class="ri-equalizer-line" style="color:var(--primary);"></i> Configuração de Tarifas e Políticas da Rede</h3>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">
+              As alterações realizadas abaixo são aplicadas imediatamente a todos os cálculos da plataforma (agendamentos de motoristas, repasses de hosts e conciliações financeiras).
+            </p>
+
+            <form onsubmit="handleSalvarParametros(event)">
+              <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
+                
+                <div class="form-group">
+                  <label style="display: flex; align-items: center; gap: 6px;">
+                    <i class="ri-flashlight-line" style="color: var(--primary);"></i> Tarifa Base de Recarga (R$/hora) *
+                  </label>
+                  <input type="number" step="0.50" min="5" max="100" id="cfg-tarifa-base" class="form-control" required placeholder="15.00" oninput="atualizarSimulacaoParametros()">
+                  <small style="color: var(--text-muted); font-size: 11px;">Preço cobrado pela sessão de 1 hora de recarga nas Wallboxes da rede.</small>
+                </div>
+
+                <div class="form-group">
+                  <label style="display: flex; align-items: center; gap: 6px;">
+                    <i class="ri-pie-chart-2-line" style="color: var(--primary);"></i> Taxa da Plataforma (%) *
+                  </label>
+                  <input type="number" step="1" min="0" max="50" id="cfg-taxa-plataforma" class="form-control" required placeholder="25" oninput="atualizarSimulacaoParametros()">
+                  <small style="color: var(--text-muted); font-size: 11px;">Percentual retido pela Recarga Fácil para custeio operacional.</small>
+                </div>
+
+                <div class="form-group">
+                  <label style="display: flex; align-items: center; gap: 6px;">
+                    <i class="ri-time-line" style="color: #F59E0B;"></i> Tolerância Máxima (minutos) *
+                  </label>
+                  <input type="number" step="1" min="5" max="60" id="cfg-tolerancia-minutos" class="form-control" required placeholder="15" oninput="atualizarSimulacaoParametros()">
+                  <small style="color: var(--text-muted); font-size: 11px;">Tempo limite para o motorista conectar o carro antes de virar No-Show.</small>
+                </div>
+
+                <div class="form-group">
+                  <label style="display: flex; align-items: center; gap: 6px;">
+                    <i class="ri-alert-line" style="color: #EF4444;"></i> Multa por No-Show (%) *
+                  </label>
+                  <input type="number" step="1" min="0" max="50" id="cfg-multa-noshow" class="form-control" required placeholder="10" oninput="atualizarSimulacaoParametros()">
+                  <small style="color: var(--text-muted); font-size: 11px;">Percentual retido e repassado ao anfitrião caso o motorista falte.</small>
+                </div>
+
+              </div>
+
+              <!-- SIMULADOR VISUAL DO IMPACTO DAS REGRAS -->
+              <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-dark); border-radius: 10px; padding: 16px; margin: 20px 0;">
+                <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 10px; text-transform: uppercase;">
+                  <i class="ri-calculator-line" style="color: var(--primary);"></i> Simulação de Impacto por Sessão de 2 Horas:
+                </div>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px;">
+                  <div>Valor Pago pelo Motorista: <strong id="sim-motorista-paga" style="color:#fff;">R$ 30,00</strong></div>
+                  <div>Receita da Plataforma (<span id="sim-perc-plat">25%</span>): <strong id="sim-receita-plat" style="color:var(--primary);">R$ 7,50</strong></div>
+                  <div>Repasse ao Host (<span id="sim-perc-host">75%</span>): <strong id="sim-repasse-host" style="color:#38BDF8;">R$ 22,50</strong></div>
+                  <div>Multa se houver No-Show (<span id="sim-perc-multa">10%</span>): <strong id="sim-valor-multa" style="color:#EF4444;">R$ 3,00</strong></div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <button type="submit" class="btn-submit" style="display: inline-flex; align-items: center; gap: 8px;">
+                  <i class="ri-save-3-line"></i> Salvar e Aplicar Parâmetros na Rede
+                </button>
+                <button type="button" class="btn" style="background:#0F172A; border:1px solid var(--border-dark); color:var(--text-muted); font-size:13px; padding:10px 18px;" onclick="restaurarParametrosPadrao()">
+                  <i class="ri-refresh-line"></i> Restaurar Padrões da Documentação
+                </button>
+              </div>
+            </form>
           </div>
         </section>
 
@@ -970,6 +1134,7 @@
       await loadAgendas();
       await loadReservas();
       await loadPagamentos();
+      loadParametrosNaTela();
     }
 
     // STATS
@@ -1337,11 +1502,27 @@
       }
     }
 
-    // PAGAMENTOS (TAXA 25%)
+    // ==========================================
+    // SANDBOX FINANCEIRO & SPLIT AUTOMÁTICO (RN03)
+    // ==========================================
     function calcularTaxaAutomatica() {
       const total = Number(document.getElementById('pag-total').value || 0);
-      const taxa = total * 0.25;
-      document.getElementById('pag-taxa').value = taxa.toFixed(2);
+      const cfg = getPlatformConfig();
+      const percTaxa = (cfg.taxaPlataforma || 25) / 100;
+      const taxa = total * percTaxa;
+      const liquido = total - taxa;
+      
+      document.getElementById('pag-taxa').value = `R$ ${taxa.toFixed(2)} (${cfg.taxaPlataforma}%)`;
+      document.getElementById('pag-liquido').value = `R$ ${liquido.toFixed(2)}`;
+    }
+
+    function aoSelecionarReservaSimulacao() {
+      const inputTotal = document.getElementById('pag-total');
+      const cfg = getPlatformConfig();
+      if (!inputTotal.value || Number(inputTotal.value) === 0) {
+        inputTotal.value = (cfg.tarifaBaseHora * 2).toFixed(2); // 2 horas @ tarifa base da rede
+      }
+      calcularTaxaAutomatica();
     }
 
     async function loadPagamentos() {
@@ -1351,30 +1532,91 @@
         const list = await res.json();
         const tbody = document.getElementById('table-pagamentos');
         
-        tbody.innerHTML = list.map(p => `
-          <tr>
-            <td><strong>#${p.id}</strong></td>
-            <td>Reserva #${p.reserva ? p.reserva.id : '-'}</td>
-            <td><strong>R$ ${(p.valorTotal || 0).toFixed(2)}</strong></td>
-            <td style="color:var(--primary);">R$ ${(p.taxaSistema || 0).toFixed(2)} (25%)</td>
-            <td><span class="status-badge ${p.statusPagamento}">${p.statusPagamento}</span></td>
-            <td>
-              <select class="form-control" style="padding:4px 8px;font-size:12px;width:auto;" onchange="handleAlterarStatusPagamento(${p.id}, this.value)">
-                <option value="">Alterar Status...</option>
-                <option value="APROVADO">APROVADO</option>
-                <option value="PENDENTE">PENDENTE</option>
-                <option value="REJEITADO">REJEITADO</option>
-              </select>
-            </td>
-          </tr>
-        `).join('');
-      } catch(e) { console.error(e); }
+        let totalBruto = 0;
+        let totalTaxa = 0;
+        let totalLiquido = 0;
+
+        tbody.innerHTML = list.map(p => {
+          const res = p.reserva || {};
+          const mot = res.motorista || {};
+          const wb = res.wallbox || {};
+          const host = wb.host || {};
+
+          const motoristaNome = mot.nome || 'Motorista Demonstração';
+          const hostNome = host.nome || 'Anfitrião Parceiro';
+          const hostPix = host.dadosBancarios || host.email || 'Chave PIX Cadastrada';
+          const dataRes = res.dataReserva ? `${res.dataReserva} às ${(res.horario || '').substring(0, 5)}` : 'Sessão Recente';
+
+          const vTotal = Number(p.valorTotal || 0);
+          const vTaxa = Number(p.taxaSistema != null ? p.taxaSistema : (vTotal * 0.25));
+          const vLiquido = vTotal - vTaxa;
+
+          if (p.statusPagamento === 'APROVADO') {
+            totalBruto += vTotal;
+            totalTaxa += vTaxa;
+            totalLiquido += vLiquido;
+          }
+
+          let badgeHtml = '';
+          if (p.statusPagamento === 'APROVADO') {
+            badgeHtml = '<span class="status-badge CONCLUIDA" style="font-size:11px; display:inline-flex; align-items:center; gap:4px;"><i class="ri-check-line"></i> Aprovado (PIX Liquidado)</span>';
+          } else if (p.statusPagamento === 'REJEITADO') {
+            badgeHtml = '<span class="status-badge CANCELADA" style="font-size:11px; display:inline-flex; align-items:center; gap:4px;"><i class="ri-close-line"></i> Rejeitado (Estorno)</span>';
+          } else {
+            badgeHtml = '<span class="status-badge PENDENTE" style="font-size:11px; display:inline-flex; align-items:center; gap:4px;"><i class="ri-time-line"></i> Pendente de Split</span>';
+          }
+
+          return `
+            <tr>
+              <td><strong>#${p.id}</strong></td>
+              <td>
+                <div style="font-weight:700; color:#fff;">Reserva #${res.id || '-'}</div>
+                <div style="font-size:11px; color:var(--text-muted);">${dataRes}</div>
+              </td>
+              <td>
+                <div style="font-weight:600; color:#fff;">${motoristaNome}</div>
+                <div style="font-size:11px; color:var(--text-muted);">${mot.email || '-'}</div>
+              </td>
+              <td>
+                <div style="font-weight:600; color:#fff;">${hostNome}</div>
+                <div style="font-size:11px; color:#38BDF8; display:inline-flex; align-items:center; gap:3px;">
+                  <i class="ri-qr-code-line"></i> ${hostPix}
+                </div>
+              </td>
+              <td><strong style="color:#fff;">R$ ${vTotal.toFixed(2)}</strong></td>
+              <td style="color:var(--primary); font-weight:700;">R$ ${vTaxa.toFixed(2)} <span style="font-size:10px; opacity:0.8;">(25%)</span></td>
+              <td style="color:#38BDF8; font-weight:700;">R$ ${vLiquido.toFixed(2)} <span style="font-size:10px; opacity:0.8;">(75%)</span></td>
+              <td>${badgeHtml}</td>
+              <td>
+                <select class="form-control" style="padding:4px 8px;font-size:12px;width:auto;" onchange="handleAlterarStatusPagamento(${p.id}, this.value)">
+                  <option value="">Simular Status...</option>
+                  <option value="APROVADO" ${p.statusPagamento === 'APROVADO' ? 'selected' : ''}>APROVADO (Split PIX)</option>
+                  <option value="PENDENTE" ${p.statusPagamento === 'PENDENTE' ? 'selected' : ''}>PENDENTE</option>
+                  <option value="REJEITADO" ${p.statusPagamento === 'REJEITADO' ? 'selected' : ''}>REJEITADO (Estornar)</option>
+                </select>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Atualiza cards de KPI do Sandbox
+        const elBruto = document.getElementById('sandbox-total-bruto');
+        const elTaxa = document.getElementById('sandbox-receita-plataforma');
+        const elHosts = document.getElementById('sandbox-repasse-hosts');
+        const elTrans = document.getElementById('sandbox-total-transacoes');
+
+        if (elBruto) elBruto.innerText = `R$ ${totalBruto.toFixed(2).replace('.', ',')}`;
+        if (elTaxa) elTaxa.innerText = `R$ ${totalTaxa.toFixed(2).replace('.', ',')}`;
+        if (elHosts) elHosts.innerText = `R$ ${totalLiquido.toFixed(2).replace('.', ',')}`;
+        if (elTrans) elTrans.innerText = list.length;
+
+      } catch(e) { console.error("Erro ao carregar pagamentos:", e); }
     }
 
     async function handleCadastrarPagamento(e) {
       e.preventDefault();
       const total = Number(document.getElementById('pag-total').value);
-      const taxa = Number(document.getElementById('pag-taxa').value);
+      const taxa = total * 0.25;
       const payload = {
         idReserva: Number(document.getElementById('pag-reserva-select').value),
         valorTotal: total,
@@ -1386,13 +1628,15 @@
         body: JSON.stringify(payload)
       });
       if (res.ok) {
-        showToast("Pagamento registrado com sucesso!");
+        showToast("Simulação de pagamento aprovada e Split PIX registrado com sucesso!");
         e.target.reset();
+        document.getElementById('pag-taxa').value = '';
+        document.getElementById('pag-liquido').value = '';
         await loadPagamentos();
         await loadReservas();
         await loadStats();
       } else {
-        alert("Erro ao gravar pagamento.");
+        alert("Erro ao simular pagamento.");
       }
     }
 
@@ -1404,12 +1648,105 @@
         body: JSON.stringify({ status: novoStatus })
       });
       if (res.ok) {
-        showToast(`Status do pagamento #${id} atualizado para ${novoStatus}!`);
+        showToast(`Status da transação #${id} atualizado para ${novoStatus}!`);
         await loadPagamentos();
         await loadStats();
       } else {
         alert("Erro ao atualizar status do pagamento.");
       }
+    }
+
+    // ==========================================
+    // GESTÃO DE PARÂMETROS GLOBAIS DA REDE (RN03 & RN04)
+    // ==========================================
+    function getPlatformConfig() {
+      const saved = localStorage.getItem('recarga_facil_config');
+      if (saved) {
+        try { return JSON.parse(saved); } catch(e) {}
+      }
+      return {
+        tarifaBaseHora: 15.00,
+        taxaPlataforma: 25.0,
+        toleranciaMinutos: 15,
+        multaNoShow: 10.0
+      };
+    }
+
+    function loadParametrosNaTela() {
+      const cfg = getPlatformConfig();
+      const inTarifa = document.getElementById('cfg-tarifa-base');
+      const inTaxa = document.getElementById('cfg-taxa-plataforma');
+      const inTol = document.getElementById('cfg-tolerancia-minutos');
+      const inMulta = document.getElementById('cfg-multa-noshow');
+
+      if (inTarifa) inTarifa.value = Number(cfg.tarifaBaseHora).toFixed(2);
+      if (inTaxa) inTaxa.value = cfg.taxaPlataforma;
+      if (inTol) inTol.value = cfg.toleranciaMinutos;
+      if (inMulta) inMulta.value = cfg.multaNoShow;
+
+      atualizarSimulacaoParametros();
+    }
+
+    function atualizarSimulacaoParametros() {
+      const tarifa = Number(document.getElementById('cfg-tarifa-base')?.value || 15);
+      const taxa = Number(document.getElementById('cfg-taxa-plataforma')?.value || 25);
+      const multa = Number(document.getElementById('cfg-multa-noshow')?.value || 10);
+
+      const sessao2h = tarifa * 2;
+      const receitaPlat = sessao2h * (taxa / 100);
+      const repasseHost = sessao2h - receitaPlat;
+      const valorMulta = sessao2h * (multa / 100);
+
+      const elPaga = document.getElementById('sim-motorista-paga');
+      const elPercPlat = document.getElementById('sim-perc-plat');
+      const elRecPlat = document.getElementById('sim-receita-plat');
+      const elPercHost = document.getElementById('sim-perc-host');
+      const elRepHost = document.getElementById('sim-repasse-host');
+      const elPercMulta = document.getElementById('sim-perc-multa');
+      const elValMulta = document.getElementById('sim-valor-multa');
+
+      if (elPaga) elPaga.innerText = `R$ ${sessao2h.toFixed(2).replace('.', ',')}`;
+      if (elPercPlat) elPercPlat.innerText = `${taxa}%`;
+      if (elRecPlat) elRecPlat.innerText = `R$ ${receitaPlat.toFixed(2).replace('.', ',')}`;
+      if (elPercHost) elPercHost.innerText = `${(100 - taxa)}%`;
+      if (elRepHost) elRepHost.innerText = `R$ ${repasseHost.toFixed(2).replace('.', ',')}`;
+      if (elPercMulta) elPercMulta.innerText = `${multa}%`;
+      if (elValMulta) elValMulta.innerText = `R$ ${valorMulta.toFixed(2).replace('.', ',')}`;
+    }
+
+    function handleSalvarParametros(e) {
+      e.preventDefault();
+      const tarifa = Number(document.getElementById('cfg-tarifa-base').value);
+      const taxa = Number(document.getElementById('cfg-taxa-plataforma').value);
+      const tol = Number(document.getElementById('cfg-tolerancia-minutos').value);
+      const multa = Number(document.getElementById('cfg-multa-noshow').value);
+
+      const novaConfig = {
+        tarifaBaseHora: tarifa,
+        taxaPlataforma: taxa,
+        toleranciaMinutos: tol,
+        multaNoShow: multa
+      };
+
+      localStorage.setItem('recarga_facil_config', JSON.stringify(novaConfig));
+      showToast("Parâmetros e tarifas aplicados com sucesso em toda a rede!");
+      atualizarSimulacaoParametros();
+
+      // Recalcula campos da aba de pagamentos
+      calcularTaxaAutomatica();
+    }
+
+    function restaurarParametrosPadrao() {
+      const padrao = {
+        tarifaBaseHora: 15.00,
+        taxaPlataforma: 25.0,
+        toleranciaMinutos: 15,
+        multaNoShow: 10.0
+      };
+      localStorage.setItem('recarga_facil_config', JSON.stringify(padrao));
+      loadParametrosNaTela();
+      showToast("Parâmetros restaurados para os valores padrão da documentação.");
+      calcularTaxaAutomatica();
     }
   </script>
 </body>
