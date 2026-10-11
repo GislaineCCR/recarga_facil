@@ -1240,7 +1240,7 @@ window.abrirModalAtualizarCadastro = function(aba = 'geral') {
 
   if (nomeInput) nomeInput.value = motorista.nome || '';
   if (telInput) telInput.value = motorista.telefone || '(11) 99269-6670';
-  if (cpfInput) cpfInput.value = motorista.cpf || '36316445822';
+  if (cpfInput) cpfInput.value = motorista.cpf || '36616646633';
   if (emailInput) emailInput.value = motorista.email || '';
   if (senhaInput) senhaInput.value = '';
 

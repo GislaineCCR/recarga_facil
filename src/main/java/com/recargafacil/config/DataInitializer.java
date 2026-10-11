@@ -123,7 +123,7 @@ public class DataInitializer implements CommandLineRunner {
         Motorista motoristaGislaine = new Motorista();
         motoristaGislaine.setUsuario(uGislaine);
         motoristaGislaine.setNome("Gislaine Cristina Cesario Rodrigues");
-        motoristaGislaine.setCpf("36316445822");
+        motoristaGislaine.setCpf("36616646633");
         motoristaGislaine.setEmail("gislaine.c.cesario@gmail.com");
         motoristaGislaine.setTelefone("(11) 99269-6670");
         motoristaRepository.save(motoristaGislaine);
@@ -181,7 +181,7 @@ public class DataInitializer implements CommandLineRunner {
         hostGislaine.setUsuario(uGislaine);
         hostGislaine.setNome("Gislaine Cristina Cesario Rodrigues");
         hostGislaine.setEmail("gislaine.c.cesario@gmail.com");
-        hostGislaine.setCpf("36316445822");
+        hostGislaine.setCpf("36616646633");
         hostGislaine.setTelefone("(11) 99269-6670");
         hostGislaine.setDadosBancarios("PIX: gislaine.c.cesario@gmail.com (Nubank)");
         hostGislaine.setFotoUrl("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80");
