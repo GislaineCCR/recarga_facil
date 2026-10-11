@@ -39,10 +39,10 @@ INSERT INTO veiculo (id_motorista, modelo, marca, placa, renavan, tipo_conector)
 SET @id_veiculo_demo = 1;
 
 -- 4. ANFITRIÕES (HOSTS)
-INSERT INTO host (id_usuario, nome, email, dados_bancarios) VALUES
-(@user_carlos, 'Carlos Eduardo M.', 'carlos@recargafacil.com', 'PIX: carlos@recargafacil.com (Nubank)'),
-(@user_nexus, 'Nexus Hub Inovação', 'contato@nexushub.com', 'PIX: 12.345.678/0001-90 (Itaú)'),
-(@user_mariana, 'Dra. Mariana Santos', 'mariana@recargafacil.com', 'PIX: mariana@recargafacil.com (Santander)');
+INSERT INTO host (id_usuario, nome, email, cpf, telefone, dados_bancarios) VALUES
+(@user_carlos, 'Carlos Eduardo M.', 'carlos@recargafacil.com', '321.654.987-11', '(15) 99123-8899', 'PIX: carlos@recargafacil.com (Nubank)'),
+(@user_nexus, 'Nexus Hub Inovação', 'contato@nexushub.com', '12.345.678/0001-90', '(15) 3211-9000', 'PIX: 12.345.678/0001-90 (Itaú)'),
+(@user_mariana, 'Dra. Mariana Santos', 'mariana@recargafacil.com', '456.789.123-55', '(15) 98144-5566', 'PIX: mariana@recargafacil.com (Santander)');
 
 SET @host_carlos = 1;
 SET @host_nexus = 2;
@@ -73,11 +73,34 @@ SET @wb_campolim = 1;
 SET @wb_nexus = 2;
 SET @wb_jdam = 3;
 
--- 7. HORÁRIOS DISPONÍVEIS NA AGENDA
+-- 7. HORÁRIOS DISPONÍVEIS NA AGENDA (SEMANA COMPLETA)
 INSERT INTO agenda (id_wallbox, dia_semana, horario_inicio, horario_fim, esta_ativo) VALUES
+-- Wallbox 1 (Residencial Campolim)
 (@wb_campolim, 'SEGUNDA', '08:00:00', '22:00:00', 1),
+(@wb_campolim, 'TERCA',   '08:00:00', '22:00:00', 1),
+(@wb_campolim, 'QUARTA',  '08:00:00', '22:00:00', 1),
+(@wb_campolim, 'QUINTA',  '08:00:00', '22:00:00', 1),
+(@wb_campolim, 'SEXTA',   '08:00:00', '22:00:00', 1),
+(@wb_campolim, 'SABADO',  '09:00:00', '20:00:00', 1),
+(@wb_campolim, 'DOMINGO', '09:00:00', '18:00:00', 1),
+
+-- Wallbox 2 (Hub Nexus Comercial)
 (@wb_nexus, 'SEGUNDA', '07:00:00', '20:00:00', 1),
-(@wb_jdam, 'SEGUNDA', '09:00:00', '18:00:00', 1);
+(@wb_nexus, 'TERCA',   '07:00:00', '20:00:00', 1),
+(@wb_nexus, 'QUARTA',  '07:00:00', '20:00:00', 1),
+(@wb_nexus, 'QUINTA',  '07:00:00', '20:00:00', 1),
+(@wb_nexus, 'SEXTA',   '07:00:00', '20:00:00', 1),
+(@wb_nexus, 'SABADO',  '08:00:00', '16:00:00', 1),
+(@wb_nexus, 'DOMINGO', '08:00:00', '14:00:00', 0),
+
+-- Wallbox 3 (Residencial Solar Verde)
+(@wb_jdam, 'SEGUNDA', '08:00:00', '19:00:00', 1),
+(@wb_jdam, 'TERCA',   '08:00:00', '19:00:00', 1),
+(@wb_jdam, 'QUARTA',  '08:00:00', '19:00:00', 1),
+(@wb_jdam, 'QUINTA',  '08:00:00', '19:00:00', 1),
+(@wb_jdam, 'SEXTA',   '08:00:00', '19:00:00', 1),
+(@wb_jdam, 'SABADO',  '09:00:00', '18:00:00', 1),
+(@wb_jdam, 'DOMINGO', '10:00:00', '16:00:00', 1);
 
 -- 8. EXEMPLO DE RESERVA E PAGAMENTO (HISTÓRICO)
 INSERT INTO reserva (id_motorista, id_veiculo, id_wallbox, data_reserva, horario, status_reserva) VALUES

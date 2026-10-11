@@ -7,8 +7,12 @@
    TELA 1: BUSCA NO MAPA
    -------------------------------------------------------------------------- */
 #screen-search {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
   padding-bottom: 0;
-  position: relative;
   overflow: hidden;
 }
 
@@ -965,12 +969,73 @@
   box-shadow: var(--shadow-md);
 }
 
+.profile-avatar-wrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+}
+
 .profile-avatar-large {
-  width: 60px;
-  height: 60px;
+  width: 100%;
+  height: 100%;
   border-radius: var(--radius-full);
   border: 2.5px solid var(--primary);
   object-fit: cover;
+  transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+
+.profile-avatar-wrapper:hover .profile-avatar-large {
+  filter: brightness(0.85);
+  transform: scale(1.02);
+}
+
+.avatar-edit-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  border: 2.5px solid #0F172A;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.profile-avatar-wrapper:hover .avatar-edit-badge {
+  transform: scale(1.15);
+  background: #00FF9D;
+}
+
+.avatar-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.avatar-preset-item {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid #CBD5E1;
+  cursor: pointer;
+  object-fit: cover;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.avatar-preset-item:hover, .avatar-preset-item.active {
+  border-color: var(--primary);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 208, 132, 0.35);
 }
 
 .impact-dashboard-grid {

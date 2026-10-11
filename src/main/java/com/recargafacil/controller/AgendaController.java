@@ -42,4 +42,16 @@ public class AgendaController {
         agendaService.remover(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/wallbox/{idWallbox}/grade")
+    @Operation(summary = "Salvar ou atualizar a grade semanal de disponibilidade da Wallbox")
+    public ResponseEntity<List<Agenda>> salvarGrade(@PathVariable Long idWallbox, @RequestBody List<AgendaDTO> grade) {
+        return ResponseEntity.ok(agendaService.salvarGrade(idWallbox, grade));
+    }
+
+    @PatchMapping("/{id}/toggle")
+    @Operation(summary = "Alternar status ativo/inativo de um dia da agenda")
+    public ResponseEntity<Agenda> alternarStatusDia(@PathVariable Long id) {
+        return ResponseEntity.ok(agendaService.alternarStatusDia(id));
+    }
 }

@@ -96,39 +96,37 @@
   <!-- VIEWPORT PRINCIPAL -->
   <div id="app-viewport">
     
-    <!-- CONTAINER DA PLATAFORMA (MODO WEB POR PADRÃO) -->
-    <main class="app-container fullscreen-mode">
-      
-      <!-- BARRA DE TOPO DA PLATAFORMA WEB INTEGRADA -->
-      <header class="web-platform-bar">
-        <div class="web-platform-brand">
-          <a href="index.html" class="btn-back-home" title="Voltar para a Landing Page">
-            <i class="ri-arrow-left-line"></i> Início
-          </a>
-          <span class="web-platform-title">
-            <i class="ri-charging-pile-2-fill" style="color: var(--primary);"></i> Recarga Fácil <strong>Motoristas</strong>
-          </span>
-        </div>
-        <div class="web-platform-status">
-          <!-- Acesso ao Portal do Anfitrião -->
-          <a href="host.html" class="btn-back-home" style="background: rgba(56, 189, 248, 0.15); color: #0284C7; border: 1px solid rgba(56, 189, 248, 0.3);" title="Acessar Portal do Anfitrião (Host)">
-            <i class="ri-home-wifi-line"></i> Portal do Host
-          </a>
+    <!-- BARRA DE TOPO DA PLATAFORMA WEB INTEGRADA -->
+    <header class="web-platform-bar">
+      <div class="web-platform-brand">
+        <a href="index.html" class="btn-back-home" title="Voltar para a Landing Page">
+          <i class="ri-arrow-left-line"></i> Início
+        </a>
+        <span class="web-platform-title">
+          <i class="ri-charging-pile-2-fill" style="color: var(--primary);"></i> Recarga Fácil <strong>Motoristas</strong>
+        </span>
+      </div>
+      <div class="web-platform-status">
+        <!-- Botão de Login / Perfil do Motorista -->
+        <button id="btn-motorista-auth" class="btn-back-home" style="background: #ECFDF5; color: #059669; border: 1px solid rgba(0, 208, 132, 0.3); font-weight: 700; cursor: pointer;" onclick="abrirModalLoginMotorista()">
+          <i class="ri-user-3-line"></i> <span id="motorista-nome-bar">Entrar como Motorista</span>
+        </button>
 
-          <!-- Botão de Login / Perfil do Motorista -->
-          <button id="btn-motorista-auth" class="btn-back-home" style="background: #ECFDF5; color: #059669; border: 1px solid rgba(0, 208, 132, 0.3); font-weight: 700; cursor: pointer;" onclick="abrirModalLoginMotorista()">
-            <i class="ri-user-3-line"></i> <span id="motorista-nome-bar">Entrar como Motorista</span>
-          </button>
-
-          <!-- Indicador de Conexão com Back-end Java Spring Boot -->
-          <span id="backend-status-indicator" class="backend-status-badge" style="font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px; display: inline-flex; align-items: center; background: #ECFDF5; color: #047857;">
-            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#00D084;margin-right:6px;"></span> Conectando...
-          </span>
-          <button id="toggle-frame-btn" class="btn-view-toggle">
+        <!-- Controles de Pré-visualização ao lado do Modo Mobile -->
+        <div class="preview-mode-switch">
+          <span class="switch-label"><i class="ri-eye-line"></i> Pré-visualização:</span>
+          <button id="btn-view-mobile" class="btn-view-mode" onclick="alternarModoVisualizacao('mobile')" title="Visualizar simulação Mobile">
             <i class="ri-smartphone-line"></i> Modo Mobile
           </button>
+          <button id="btn-view-fullscreen" class="btn-view-mode active" onclick="alternarModoVisualizacao('fullscreen')" title="Visualizar em Tela Cheia">
+            <i class="ri-fullscreen-line"></i> Modo Tela Cheia
+          </button>
         </div>
-      </header>
+      </div>
+    </header>
+
+    <!-- CONTAINER DA PLATAFORMA (MODO WEB POR PADRÃO) -->
+    <main class="app-container fullscreen-mode">
 
       <!-- Barra de Status Mobile (Exibida somente ao alternar para o frame de celular) -->
       <header class="mobile-status-bar">
@@ -162,7 +160,7 @@
               </button>
             </div>
 
-            <!-- Filtros de Tipo de Ponto (Todos / Residencial / Comercial) -->
+            <!-- Filtros de Tipo de Ponto (Todos / Residencial / Comercial / Mais Próximo) -->
             <div class="filter-pills-row">
               <button class="filter-chip active" data-type="todos">
                 <i class="ri-apps-2-line"></i> Todos
@@ -173,6 +171,9 @@
               <button class="filter-chip" data-type="comercial">
                 <i class="ri-building-2-line"></i> Comerciais
               </button>
+              <button class="filter-chip" data-type="proximo" onclick="filtrarPorMaisProximo(event)">
+                <i class="ri-navigation-line"></i> Mais Próximo
+              </button>
             </div>
 
             <!-- DIFERENCIAL DO PROJETO: FILTRO DE COMODIDADES (WI-FI, CAFÉ, VAGA COBERTA, ETC.) -->
@@ -182,15 +183,20 @@
           </div>
 
           <!-- BANNER FLUTUANTE DA ESTAÇÃO MAIS PRÓXIMA (GOOGLE MAPS) -->
-          <div id="nearest-station-banner" class="nearest-station-banner" style="display: none;">
+          <div id="nearest-station-banner" class="nearest-station-banner" style="display: none; cursor: pointer;" onclick="selecionarMaisProximaBanner()">
             <div>
               <span class="nearest-tag"><i class="ri-navigation-line"></i> Ponto Mais Próximo</span>
               <div id="nearest-station-title" style="font-size: 13px; font-weight: 800; color: #1E293B;">Carregando...</div>
               <div id="nearest-station-desc" style="font-size: 11px; color: #64748B;">Calculando distância...</div>
             </div>
-            <a id="nearest-station-gmaps-btn" href="#" target="_blank" class="btn btn-primary" style="padding: 6px 12px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; border-radius: 8px; box-shadow: none;">
-              <i class="ri-map-pin-2-fill"></i> Rota Google Maps
-            </a>
+            <div style="display: flex; gap: 6px;" onclick="event.stopPropagation()">
+              <a id="nearest-station-gmaps-btn" href="#" target="_blank" class="btn btn-secondary" style="padding: 6px 10px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; border-radius: 8px;">
+                <i class="ri-map-pin-2-fill" style="color: #EA4335;"></i> Rota
+              </a>
+              <button class="btn btn-primary" onclick="selecionarMaisProximaBanner()" style="padding: 6px 12px; font-size: 11px; border-radius: 8px;">
+                <i class="ri-calendar-check-line"></i> Agendar
+              </button>
+            </div>
           </div>
 
           <!-- Indicador de Resultados -->
@@ -338,13 +344,13 @@
             <form id="form-login-motorista" onsubmit="realizarLoginMotorista(event)">
               <div style="margin-bottom: 12px;">
                 <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">E-mail do Motorista</label>
-                <input type="email" id="motorista-login-email" required placeholder="seu@email.com" value="motorista@email.com" 
+                <input type="email" id="motorista-login-email" required placeholder="seu@email.com" 
                        style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; box-sizing: border-box; outline: none;">
               </div>
 
               <div style="margin-bottom: 16px;">
                 <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Senha</label>
-                <input type="password" id="motorista-login-senha" required placeholder="••••••••" value="senha123" 
+                <input type="password" id="motorista-login-senha" required placeholder="••••••••" 
                        style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; box-sizing: border-box; outline: none;">
               </div>
 
@@ -356,18 +362,6 @@
                 ✨ Não possui conta? Criar cadastro agora
               </button>
             </form>
-
-            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0;">
-              <p style="font-size: 11px; color: #64748B; margin-bottom: 6px; font-weight: 600;">Contas cadastradas no MySQL:</p>
-              <button type="button" onclick="preencherLoginMotorista('motorista@email.com', 'senha123')" 
-                      style="width: 100%; text-align: left; padding: 7px 10px; margin-bottom: 4px; font-size: 11px; border: 1px solid #E2E8F0; border-radius: 6px; background: #F8FAFC; cursor: pointer; color: #334155;">
-                🚗 <strong>Motorista Demo EV</strong> (BYD Dolphin GS)
-              </button>
-              <button type="button" onclick="preencherLoginMotorista('gislaine.c.cesario@gmail.com', '1234')" 
-                      style="width: 100%; text-align: left; padding: 7px 10px; font-size: 11px; border: 1px solid #E2E8F0; border-radius: 6px; background: #F8FAFC; cursor: pointer; color: #334155;">
-                ⚡ <strong>Gislaine Cristina</strong>
-              </button>
-            </div>
           </div>
 
           <!-- PAINEL CADASTRO -->
@@ -401,7 +395,7 @@
                 </div>
                 <div>
                   <label style="font-size: 11px; font-weight: 700; color: #334155; display: block; margin-bottom: 2px;">Telefone *</label>
-                  <input type="text" id="app-cad-telefone" required placeholder="(15) 99887-6655" 
+                  <input type="text" id="app-cad-telefone" required placeholder="(00)00000-0000" 
                          style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box; outline: none;">
                 </div>
               </div>
@@ -473,14 +467,141 @@
         </div>
       </div>
 
+      <!-- MODAL DE ATUALIZAÇÃO CADASTRAL DO MOTORISTA -->
+      <div id="modal-atualizar-cadastro" class="driver-modal-overlay" style="display: none;">
+        <div class="driver-modal-box" style="max-width: 440px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <i class="ri-user-settings-line"></i>
+              </div>
+              <div>
+                <h3 style="font-size: 17px; font-weight: 800; color: #1E293B; margin: 0;">Atualizar Cadastro</h3>
+                <span style="font-size: 11px; color: #64748B;">Altere telefone, e-mail e forma de pagamento</span>
+              </div>
+            </div>
+            <button type="button" onclick="fecharModalAtualizarCadastro()" style="background: none; border: none; font-size: 20px; color: #94A3B8; cursor: pointer;">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+
+          <form id="form-atualizar-cadastro" onsubmit="salvarAtualizacaoCadastroMotorista(event)">
+            <div style="margin-bottom: 10px;">
+              <label style="font-size: 11px; font-weight: 700; color: #334155; display: block; margin-bottom: 2px;">Nome Completo</label>
+              <input type="text" id="edit-motorista-nome" required 
+                     style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box; outline: none;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #334155; display: block; margin-bottom: 2px;">Telefone / WhatsApp *</label>
+                <input type="text" id="edit-motorista-telefone" required placeholder="(00)00000-0000" 
+                       style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box; outline: none;">
+              </div>
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #334155; display: block; margin-bottom: 2px;">CPF (Apenas leitura)</label>
+                <input type="text" id="edit-motorista-cpf" disabled readonly 
+                       style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #E2E8F0; font-size: 12px; box-sizing: border-box; background: #F8FAFC; color: #64748B;">
+              </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="font-size: 11px; font-weight: 700; color: #334155; display: block; margin-bottom: 2px;">E-mail</label>
+              <input type="email" id="edit-motorista-email" required 
+                     style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box; outline: none;">
+            </div>
+
+            <!-- FORMA DE PAGAMENTO PREFERENCIAL -->
+            <div style="margin-bottom: 14px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px;">
+              <label style="font-size: 12px; font-weight: 800; color: #0F172A; display: block; margin-bottom: 6px;">
+                <i class="ri-bank-card-line" style="color: var(--primary);"></i> Forma de Pagamento Preferencial
+              </label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px;">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; padding: 8px; border: 1px solid #CBD5E1; border-radius: 6px; background: white;">
+                  <input type="radio" name="edit-forma-pagamento" value="pix" id="radio-pag-pix" checked onchange="toggleEditPaymentFields()">
+                  <strong>Pix Instantâneo</strong>
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; padding: 8px; border: 1px solid #CBD5E1; border-radius: 6px; background: white;">
+                  <input type="radio" name="edit-forma-pagamento" value="card" id="radio-pag-card" onchange="toggleEditPaymentFields()">
+                  <strong>Cartão de Crédito</strong>
+                </label>
+              </div>
+
+              <!-- Detalhes do Cartão (Exibido se cartão selecionado) -->
+              <div id="edit-card-fields" style="display: none; padding-top: 6px;">
+                <div>
+                  <label style="font-size: 10px; font-weight: 700; color: #64748B; display: block; margin-bottom: 2px;">Identificação do Cartão</label>
+                  <input type="text" id="edit-card-final" placeholder="Ex: Mastercard final 8821" 
+                         style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 11px; box-sizing: border-box;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Nova Senha (Opcional) -->
+            <div style="margin-bottom: 16px;">
+              <label style="font-size: 11px; font-weight: 700; color: #334155; display: block; margin-bottom: 2px;">Nova Senha (deixe em branco para manter a atual)</label>
+              <input type="password" id="edit-motorista-senha" placeholder="••••••••" 
+                     style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box; outline: none;">
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button type="button" onclick="fecharModalAtualizarCadastro()" class="btn btn-secondary" style="flex: 1; padding: 10px; font-size: 12px; border-radius: 8px; cursor: pointer;">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary" id="btn-save-motorista-edit" style="flex: 1.5; padding: 10px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer;">
+                <i class="ri-check-line"></i> Salvar Alterações
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- MODAL DE ALTERAÇÃO DA FOTO DE PERFIL -->
+      <div id="modal-foto-perfil" class="driver-modal-overlay" style="display: none;">
+        <div class="driver-modal-box" style="max-width: 400px; text-align: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 17px; font-weight: 800; color: #1E293B; margin: 0;">Foto de Perfil</h3>
+            <button type="button" onclick="fecharModalFotoPerfil()" style="background: none; border: none; font-size: 20px; color: #94A3B8; cursor: pointer;">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+
+          <!-- Preview da Foto Atual -->
+          <div style="margin: 0 auto 16px; width: 90px; height: 90px; position: relative;">
+            <img id="modal-avatar-preview" src="" alt="Preview" 
+                 style="width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--primary); object-fit: cover; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+          </div>
+
+          <!-- Botão de Upload do Dispositivo -->
+          <input type="file" id="input-foto-perfil-file" accept="image/*" style="display: none;" onchange="handleFotoUploadChange(event)">
+          <button type="button" class="btn btn-primary" style="width: 100%; padding: 11px; font-size: 13px; font-weight: 700; border-radius: 10px; margin-bottom: 14px; cursor: pointer;" onclick="document.getElementById('input-foto-perfil-file').click()">
+            <i class="ri-upload-2-line"></i> Escolher Foto do Computador / Celular
+          </button>
+
+          <!-- Divisor -->
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+            <div style="flex: 1; height: 1px; background: #E2E8F0;"></div>
+            <span style="font-size: 11px; color: #94A3B8; font-weight: 600;">OU ESCOLHA UM AVATAR</span>
+            <div style="flex: 1; height: 1px; background: #E2E8F0;"></div>
+          </div>
+
+          <!-- Galeria de Avatares Pré-definidos -->
+          <div class="avatar-presets-grid" id="avatar-presets-container">
+            <!-- Gerado dinamicamente via JS -->
+          </div>
+
+          <div style="margin-top: 16px;">
+            <button type="button" onclick="fecharModalFotoPerfil()" class="btn btn-secondary" style="width: 100%; padding: 9px; font-size: 12px; border-radius: 8px;">
+              Concluir
+            </button>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
-  <!-- CONTROLE DESKTOP (ALTERNAR MODO CELULAR / TELA CHEIA) -->
-  <aside class="desktop-controls">
-    <span><i class="ri-smartphone-line"></i> Pré-visualização</span>
-    <button id="toggle-frame-btn">Modo Tela Cheia</button>
-  </aside>
+
 
   <!-- Leaflet Map JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>

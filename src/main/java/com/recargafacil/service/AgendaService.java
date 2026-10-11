@@ -52,4 +52,36 @@ public class AgendaService {
     public void remover(Long id) {
         agendaRepository.deleteById(id);
     }
+
+    @org.springframework.transaction.annotation.Transactional
+    public List<Agenda> salvarGrade(Long idWallbox, List<AgendaDTO> grade) {
+        Wallbox wallbox = wallboxRepository.findById(idWallbox)
+                .orElseThrow(() -> new RuntimeException("Wallbox não encontrada com ID: " + idWallbox));
+
+        List<Agenda> existentes = agendaRepository.findByWallboxId(idWallbox);
+
+        for (AgendaDTO dto : grade) {
+            Agenda agenda = existentes.stream()
+                    .filter(a -> a.getDiaSemana() == dto.getDiaSemana())
+                    .findFirst()
+                    .orElse(new Agenda());
+
+            agenda.setWallbox(wallbox);
+            agenda.setDiaSemana(dto.getDiaSemana());
+            agenda.setHorarioInicio(dto.getHorarioInicio());
+            agenda.setHorarioFim(dto.getHorarioFim());
+            agenda.setEstaAtivo(dto.getEstaAtivo() != null ? dto.getEstaAtivo() : false);
+
+            agendaRepository.save(agenda);
+        }
+
+        return agendaRepository.findByWallboxId(idWallbox);
+    }
+
+    public Agenda alternarStatusDia(Long idAgenda) {
+        Agenda agenda = agendaRepository.findById(idAgenda)
+                .orElseThrow(() -> new RuntimeException("Agenda não encontrada com ID: " + idAgenda));
+        agenda.setEstaAtivo(!Boolean.TRUE.equals(agenda.getEstaAtivo()));
+        return agendaRepository.save(agenda);
+    }
 }

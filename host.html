@@ -79,8 +79,48 @@
       border-radius: 20px;
       padding: 36px;
       width: 100%;
-      max-width: 440px;
+      max-width: 460px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      transition: max-width 0.25s ease;
+    }
+
+    .login-box.wide {
+      max-width: 680px;
+      max-height: 94vh;
+      overflow-y: auto;
+    }
+
+    .form-section-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin: 18px 0 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .amenity-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: 8px;
+      background: #0F172A;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #94A3B8;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+
+    .amenity-chip.selected {
+      background: rgba(0, 208, 132, 0.18);
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 700;
     }
 
     .login-header {
@@ -457,52 +497,304 @@
   </div>
 
   <!-- =========================================================================
-       TELA 1: LOGIN ESPECÍFICO DO ANFITRIÃO (HOST)
+       TELA 1: LOGIN E CADASTRO ESPECÍFICO DO ANFITRIÃO (HOST)
        ========================================================================= -->
   <div id="host-login-screen">
     <div class="login-box">
-      <div class="login-header">
-        <div class="logo-badge">
-          <i class="ri-home-wifi-line"></i> Área do Anfitrião
-        </div>
-        <h1>Portal do Host</h1>
-        <p>Gerencie suas estações de recarga, agendamentos recebidos e faturamento líquido.</p>
-      </div>
-
-      <form id="host-login-form" onsubmit="realizarLoginHost(event)">
-        <div class="form-group">
-          <label>E-mail do Anfitrião</label>
-          <input type="email" id="host-email" class="form-control" placeholder="carlos@recargafacil.com" required value="carlos@recargafacil.com">
-        </div>
-
-        <div class="form-group">
-          <label>Senha</label>
-          <input type="password" id="host-senha" class="form-control" placeholder="••••••••" required value="senha123">
-        </div>
-
-        <button type="submit" class="btn btn-primary" id="btn-login-host">
-          <i class="ri-login-box-line"></i> Acessar Painel do Host
+      <!-- Abas de Navegação -->
+      <div style="display: flex; gap: 6px; background: #0F172A; padding: 4px; border-radius: 12px; border: 1px solid var(--border-dark); margin-bottom: 24px;">
+        <button id="host-tab-login" type="button" onclick="alternarAbaAuthHost('login')" style="flex: 1; padding: 8px 14px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background: var(--primary); color: #064E3B; transition: all 0.2s;">
+          Já sou Anfitrião (Host)
         </button>
-      </form>
-
-      <div class="quick-access-box">
-        <p>Acesso rápido aos Anfitriões de Demonstração:</p>
-        <button class="quick-btn" onclick="preencherLoginHost('carlos@recargafacil.com', 'senha123')">
-          👤 <strong>Carlos Eduardo M.</strong> (Campolim - 7.4kW)
-        </button>
-        <button class="quick-btn" onclick="preencherLoginHost('contato@nexushub.com', 'senha123')">
-          🏢 <strong>Nexus Hub Inovação</strong> (Coworking - 22kW)
-        </button>
-        <button class="quick-btn" onclick="preencherLoginHost('mariana@recargafacil.com', 'senha123')">
-          ☀️ <strong>Dra. Mariana Santos</strong> (Jd. América Solar - 11kW)
+        <button id="host-tab-cadastro" type="button" onclick="alternarAbaAuthHost('cadastro')" style="flex: 1; padding: 8px 14px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted); transition: all 0.2s;">
+          Criar cadastro Anfitrião (Host)
         </button>
       </div>
 
-      <div style="text-align: center; margin-top: 18px;">
-        <a href="index.html" style="color: var(--text-muted); font-size: 12px; text-decoration: none;">
-          ← Voltar para a Página Inicial
-        </a>
+      <!-- PAINEL 1: LOGIN DO HOST -->
+      <div id="host-painel-login">
+        <div class="login-header">
+          <div class="logo-badge">
+            <i class="ri-home-wifi-line"></i> Área do Anfitrião
+          </div>
+          <h1>Portal do Host</h1>
+          <p>Gerencie suas estações de recarga, agendamentos recebidos e faturamento líquido.</p>
+        </div>
+
+        <form id="host-login-form" onsubmit="realizarLoginHost(event)">
+          <div class="form-group">
+            <label>E-mail do Anfitrião</label>
+            <input type="email" id="host-email" class="form-control" placeholder="seu@email.com" required>
+          </div>
+
+          <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="host-senha" class="form-control" placeholder="••••••••" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="btn-login-host" style="margin-bottom: 12px;">
+            <i class="ri-login-box-line"></i> Acessar Painel do Host
+          </button>
+
+          <button type="button" onclick="alternarAbaAuthHost('cadastro')" class="btn" style="width: 100%; background: rgba(56, 189, 248, 0.12); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3);">
+            ✨ Ainda não possui conta? Criar cadastro Anfitrião (Host)
+          </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 20px;">
+          <a href="index.html" style="color: var(--text-muted); font-size: 12px; text-decoration: none;">
+            ← Voltar para a Página Inicial
+          </a>
+        </div>
       </div>
+
+      <!-- PAINEL 2: CADASTRO COMPLETO DO HOST COM WALLBOX E LOCAL -->
+      <div id="host-painel-cadastro" style="display: none;">
+        <div class="login-header" style="margin-bottom: 20px;">
+          <div class="logo-badge" style="background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.3); color: #38BDF8;">
+            <i class="ri-user-add-line"></i> Novo Anfitrião
+          </div>
+          <h1 style="font-size: 22px;">Criar Conta de Host</h1>
+          <p>Cadastre seu perfil de anfitrião, seu equipamento Wallbox e disponibilize sua vaga no mapa.</p>
+        </div>
+
+        <form id="host-cadastro-form" onsubmit="realizarCadastroHost(event)">
+          <!-- 1. DADOS DO HOST -->
+          <div class="form-section-title" style="color: var(--primary);">
+            <i class="ri-user-star-line"></i> 1. Dados Pessoais & Bancários
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Nome Completo do Anfitrião *</label>
+            <input type="text" id="host-cad-nome" class="form-control" placeholder="Ex: Roberto Silveira" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>CPF ou CNPJ *</label>
+              <input type="text" id="host-cad-cpf" class="form-control" placeholder="000.000.000-00" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Telefone / WhatsApp *</label>
+              <input type="text" id="host-cad-telefone" class="form-control" placeholder="(00)00000-0000" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>E-mail de Acesso *</label>
+              <input type="email" id="host-cad-email" class="form-control" placeholder="seu@email.com" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Senha de Acesso *</label>
+              <input type="password" id="host-cad-senha" class="form-control" placeholder="Crie uma senha" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>Dados Bancários / Chave PIX (Para Recebimentos) *</label>
+            <input type="text" id="host-cad-pix" class="form-control" placeholder="Chave PIX (e-mail, CPF ou chave aleatória)" required>
+            <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+              💰 Você receberá <strong>75% líquido</strong> do valor de cada recarga agendada em seu ponto.
+            </small>
+          </div>
+
+          <!-- FOTO DE PERFIL DO ANFITRIÃO -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>Foto de Perfil do Anfitrião (Opcional)</label>
+            <div style="display: flex; gap: 12px; align-items: center; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-dark); border-radius: 12px; padding: 10px 14px;">
+              <img id="host-cad-foto-preview" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Preview" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
+              <div style="flex: 1;">
+                <input type="file" id="host-cad-upload-foto-input" accept="image/*" style="display: none;" onchange="handleUploadFotoHostCad(event)">
+                <button type="button" class="btn" style="background: rgba(0, 208, 132, 0.15); color: var(--primary); border: 1px solid rgba(0, 208, 132, 0.3); font-size: 11px; padding: 6px 12px; width: auto;" onclick="document.getElementById('host-cad-upload-foto-input').click()">
+                  <i class="ri-camera-fill"></i> Escolher Foto do Perfil
+                </button>
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">PNG ou JPG de até 5MB</div>
+              </div>
+            </div>
+            <input type="hidden" id="host-cad-foto-perfil" value="">
+          </div>
+
+          <!-- 2. DADOS DO WALLBOX -->
+          <div class="form-section-title" style="color: #38BDF8;">
+            <i class="ri-charging-pile-line"></i> 2. Equipamento Wallbox
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Modelo / Nome do Carregador *</label>
+            <input type="text" id="host-cad-modelo" class="form-control" placeholder="Ex: Wallbox WEG Smart 7.4kW ou BMW iWallbox" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Potência do Equipamento *</label>
+              <select id="host-cad-potencia" class="form-control" required>
+                <option value="P_7KW" selected>7.4 kW (Monofásico / Residencial)</option>
+                <option value="P_11KW">11 kW (Trifásico Residencial / Solar)</option>
+                <option value="P_22KW">22 kW (Trifásico Rápido Comercial)</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Status Inicial *</label>
+              <select id="host-cad-status" class="form-control" required>
+                <option value="DISPONIVEL" selected>Disponível (Pronto p/ Agendamentos)</option>
+                <option value="OCUPADO">Ocupado</option>
+                <option value="MANUTENCAO">Em Manutenção</option>
+                <option value="INDISPONIVEL">Indisponível</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>Foto da Estação (URL)</label>
+            <input type="url" id="host-cad-foto" class="form-control" placeholder="https://exemplo.com/sua-estacao.jpg">
+          </div>
+
+          <!-- 3. LOCAL DE INSTALAÇÃO & SERVIÇOS -->
+          <div class="form-section-title" style="color: var(--accent);">
+            <i class="ri-map-pin-range-line"></i> 3. Localização, Ambiente & Serviços
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Tipo de Ambiente *</label>
+            <select id="host-cad-ambiente" class="form-control" required onchange="onTipoAmbienteChanged()">
+              <option value="RESIDENCIAL" selected>Residencial (Garagem Privada / Casa / Condomínio)</option>
+              <option value="COMERCIAL">Comercial (Estacionamento / Coworking / Restaurante / Loja)</option>
+            </select>
+            <div id="dica-ambiente" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+              🏡 <strong>Ambiente Residencial:</strong> Garagem privada, casa ou condomínio.
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Endereço Completo *</label>
+            <input type="text" id="host-cad-endereco" class="form-control" placeholder="Ex: Av. Eng. Antônio de Castro Figueirôa, 1001, Sorocaba - SP" required>
+            
+            <!-- Botoeira de busca automática de coordenadas -->
+            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+              <button type="button" onclick="buscarCoordenadasPorEndereco()" class="btn" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 12px; padding: 6px 12px;">
+                <i class="ri-search-eye-line"></i> Buscar Coordenadas GPS pelo Endereço
+              </button>
+              <button type="button" onclick="usarLocalizacaoAtualHost()" class="btn" style="background: rgba(0, 208, 132, 0.15); color: var(--primary); border: 1px solid rgba(0, 208, 132, 0.3); font-size: 12px; padding: 6px 12px;">
+                <i class="ri-crosshair-2-line"></i> Usar Meu GPS Atual
+              </button>
+            </div>
+            <div id="geo-status-msg" style="display: none; font-size: 11px; margin-top: 6px; font-weight: 600;"></div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Latitude (GPS) *</label>
+              <input type="number" step="any" id="host-cad-lat" class="form-control" placeholder="-23.5100" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Longitude (GPS) *</label>
+              <input type="number" step="any" id="host-cad-lng" class="form-control" placeholder="-47.4600" required>
+            </div>
+          </div>
+
+          <!-- Bloco de Serviços e Comodidades Oferecidos -->
+          <div id="bloco-servicos-comercial" class="form-group" style="margin-bottom: 14px;">
+            <label style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Serviços & Comodidades Oferecidos</span>
+              <span style="font-size: 11px; color: var(--primary); font-weight: 600;">Toque para selecionar</span>
+            </label>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+              <div class="amenity-chip selected" data-value="wifi" onclick="toggleComodidadeChip(this, 'wifi')">
+                <i class="ri-wifi-line"></i> Wi-Fi Grátis
+              </div>
+              <div class="amenity-chip selected" data-value="cafe" onclick="toggleComodidadeChip(this, 'cafe')">
+                <i class="ri-cup-line"></i> Café / Lounge
+              </div>
+              <div class="amenity-chip selected" data-value="banheiro" onclick="toggleComodidadeChip(this, 'banheiro')">
+                <i class="ri-rest-time-line"></i> Banheiro
+              </div>
+              <div class="amenity-chip selected" data-value="coberto" onclick="toggleComodidadeChip(this, 'coberto')">
+                <i class="ri-umbrella-line"></i> Vaga Coberta
+              </div>
+              <div class="amenity-chip" data-value="cameras" onclick="toggleComodidadeChip(this, 'cameras')">
+                <i class="ri-shield-check-line"></i> Segurança 24h
+              </div>
+              <div class="amenity-chip" data-value="trabalho" onclick="toggleComodidadeChip(this, 'trabalho')">
+                <i class="ri-laptop-line"></i> Espaço p/ Notebook
+              </div>
+              <div class="amenity-chip" data-value="conveniencia" onclick="toggleComodidadeChip(this, 'conveniencia')">
+                <i class="ri-store-2-line"></i> Loja de Conveniência
+              </div>
+            </div>
+            <input type="hidden" id="host-cad-comodidades" value="wifi, cafe, banheiro, coberto">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label>Instruções de Acesso ao Ponto</label>
+            <textarea id="host-cad-instrucoes" class="form-control" rows="2" placeholder="Ex: Portaria 24h. Informar na entrada que veio para a recarga de veículo elétrico."></textarea>
+          </div>
+
+          <!-- 4. VAGA DE ESTACIONAMENTO & AUTORIZAÇÃO DE ACESSO (VALIDAÇÃO OBRIGATÓRIA) -->
+          <div class="form-section-title" style="color: #38BDF8;">
+            <i class="ri-car-line"></i> 4. Vaga de Estacionamento & Autorização de Acesso
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>A residência/local possui espaço exclusivo para o veículo estacionar durante a recarga? *</label>
+            <select id="host-cad-possui-vaga" class="form-control" required onchange="onPossuiVagaChanged('host-cad')">
+              <option value="true" selected>✅ Sim, possui espaço/vaga disponível para o carro</option>
+              <option value="false">❌ Não possui local para estacionar</option>
+            </select>
+            <div id="host-cad-alerta-sem-vaga" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); border-radius: 10px; padding: 12px; margin-top: 8px; font-size: 12px; color: #FCA5A5;">
+              ⚠️ <strong>Validação Obrigatória:</strong> Nem todos que possuem Wallbox possuem vaga disponível para um terceiro estacionar, ou condomínio que libere o acesso. Para segurança do motorista e viabilidade do abastecimento, <strong>é obrigatório possuir espaço físico para estacionar</strong>. O ponto não pode ser ativado sem vaga disponível.
+            </div>
+          </div>
+
+          <div id="host-cad-box-detalhes-vaga">
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label>Tipo de Vaga / Acesso ao Veículo *</label>
+              <select id="host-cad-tipo-vaga" class="form-control">
+                <option value="GARAGEM_PRIVATIVA_COBERTA" selected>Garagem Residencial Privativa (Coberta)</option>
+                <option value="GARAGEM_PRIVATIVA_DESCOBERTA">Garagem Residencial Privativa (Descoberta)</option>
+                <option value="CONDOMINIO_VISITANTE">Vaga no Condomínio (Acesso liberado p/ Visitante)</option>
+                <option value="COMERCIAL_PATIO">Pátio / Estacionamento Comercial Privativo</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label>Detalhes da Vaga / Manobra (Opcional)</label>
+              <input type="text" id="host-cad-detalhes-vaga" class="form-control" placeholder="Ex: Vaga nº 34 no subsolo 1, entrada liberada na portaria">
+            </div>
+
+            <div style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-dark); border-radius: 10px; padding: 10px 12px;">
+              <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 12px; color: #CBD5E1;">
+                <input type="checkbox" id="host-cad-autorizacao-condominio" checked style="margin-top: 2px; accent-color: var(--primary);">
+                <span>
+                  <strong>Autorização de Condomínio / Local Garantida:</strong>
+                  Declaro que o condomínio ou proprietário autoriza a entrada de motoristas para recarga e que há espaço hábil para a manobra e permanência.
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 20px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-dark); border-radius: 10px; padding: 12px;">
+            <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 12px; color: #CBD5E1;">
+              <input type="checkbox" id="host-cad-acesso-pos-pagamento" checked style="margin-top: 3px; accent-color: var(--primary);">
+              <div>
+                <strong>🔒 Proteger Privacidade do Local:</strong>
+                <p style="color: var(--text-muted); font-size: 11px; margin-top: 2px;">
+                  O endereço exato e as instruções de acesso só serão liberados para o motorista após a confirmação do pagamento da reserva.
+                </p>
+              </div>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="btn-cadastrar-host" style="margin-bottom: 12px;">
+            <i class="ri-check-line"></i> Concluir Cadastro e Acessar Painel
+          </button>
+
+          <button type="button" onclick="alternarAbaAuthHost('login')" style="width: 100%; padding: 8px; font-size: 12px; font-weight: 600; border: none; background: transparent; color: var(--text-muted); cursor: pointer; text-decoration: underline;">
+            Já possui conta de Anfitrião (Host)? Entrar com login
+          </button>
+        </form>
+      </div>
+
     </div>
   </div>
 
@@ -522,15 +814,12 @@
         </div>
       </div>
 
-      <div class="user-info">
-        <div class="host-pill">
-          <i class="ri-user-star-fill" style="color: var(--accent);"></i>
-          <span id="host-nome-display">Carlos Eduardo M.</span>
+      <div class="user-info" style="display: flex; align-items: center; gap: 10px;">
+        <div class="host-pill" style="background: rgba(30, 41, 59, 0.95); border: 1px solid var(--border-dark); display: flex; align-items: center; gap: 10px; padding: 5px 14px; border-radius: 9999px;">
+          <img id="host-avatar-header" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Foto do Host" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--primary);">
+          <span id="host-nome-display" style="font-weight: 700; color: #fff;">Carlos Eduardo M.</span>
         </div>
-        <div class="host-pill" style="color: #94A3B8; font-size: 12px;" id="host-pix-display">
-          PIX: carlos@recargafacil.com
-        </div>
-        <button class="btn" style="background: rgba(239,68,68,0.15); color: #EF4444; padding: 6px 14px; font-size: 12px;" onclick="fazerLogoutHost()">
+        <button class="btn" style="background: rgba(239,68,68,0.15); color: #EF4444; padding: 7px 16px; font-size: 12px; width: auto; border-radius: 8px;" onclick="fazerLogoutHost()">
           <i class="ri-logout-box-r-line"></i> Sair
         </button>
       </div>
@@ -585,8 +874,14 @@
         <button class="tab-btn" onclick="trocarAbaHost('aba-estacoes', this)">
           <i class="ri-charging-pile-line"></i> Minhas Estações de Recarga
         </button>
+        <button class="tab-btn" onclick="trocarAbaHost('aba-agenda', this)">
+          <i class="ri-calendar-event-line"></i> Minha Agenda & Disponibilidade
+        </button>
         <button class="tab-btn" onclick="trocarAbaHost('aba-cadastro', this)">
           <i class="ri-add-circle-line"></i> Cadastrar Novo Ponto de Recarga
+        </button>
+        <button class="tab-btn" id="tab-btn-perfil" onclick="trocarAbaHost('aba-perfil', this)">
+          <i class="ri-user-settings-line"></i> Alterar Cadastro & Foto
         </button>
       </div>
 
@@ -644,7 +939,117 @@
         </div>
       </div>
 
-      <!-- ABA 3: CADASTRAR NOVO PONTO DE RECARGA -->
+      <!-- ABA: MINHA AGENDA & DISPONIBILIDADE -->
+      <div id="aba-agenda" class="tab-pane">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+              <i class="ri-calendar-event-fill" style="color: var(--primary);"></i> Minha Agenda & Controle de Disponibilidade
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">
+              Você tem total controle: pause o serviço imediatamente quando precisar ou configure os dias e horários exatos para receber agendamentos.
+            </p>
+          </div>
+          <button class="btn" style="background: #1E293B; border: 1px solid var(--border-dark); color: #fff; font-size: 12px; width: auto;" onclick="carregarAgendaDoHost()">
+            <i class="ri-refresh-line"></i> Atualizar Dados
+          </button>
+        </div>
+
+        <!-- SELEÇÃO DA ESTAÇÃO & COMUTADOR RÁPIDO LIGA/DESLIGA -->
+        <div class="form-card" style="margin-bottom: 20px; border-left: 4px solid var(--primary); padding: 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="flex: 1; min-width: 260px;">
+              <label style="font-size: 12px; font-weight: 800; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;">Estação Selecionada</label>
+              <select id="select-estacao-agenda" class="form-control" style="font-size: 15px; font-weight: 700; margin-top: 6px; background: #0F172A;" onchange="onEstacaoAgendaSelecionada()">
+                <option value="">Carregando estações...</option>
+              </select>
+            </div>
+
+            <!-- CHAVE RÁPIDA DE DISPONIBILIDADE (LIGA / PAUSA / MANUTENÇÃO) -->
+            <div style="background: rgba(15, 23, 42, 0.9); padding: 14px 20px; border-radius: 14px; border: 1px solid var(--border-dark); display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+              <div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Status Atual no Mapa</div>
+                <div id="badge-status-atual-wallbox" style="margin-top: 4px;">
+                  <span class="status-badge status-concluida" style="font-size: 13px; padding: 5px 12px;">
+                    <i class="ri-checkbox-circle-fill"></i> DISPONÍVEL
+                  </span>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn" id="btn-status-ativar" style="background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid #10B981; font-size: 12px; padding: 7px 12px; font-weight: 700; width: auto;" onclick="alterarStatusWallboxSelecionada('DISPONIVEL')">
+                  <i class="ri-play-circle-line"></i> Ativar Serviço
+                </button>
+                <button type="button" class="btn" id="btn-status-pausar" style="background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid #EF4444; font-size: 12px; padding: 7px 12px; font-weight: 700; width: auto;" onclick="alterarStatusWallboxSelecionada('INDISPONIVEL')">
+                  <i class="ri-pause-circle-line"></i> Pausar Ponto
+                </button>
+                <button type="button" class="btn" id="btn-status-manutencao" style="background: rgba(245, 158, 11, 0.2); color: #F59E0B; border: 1px solid #F59E0B; font-size: 12px; padding: 7px 12px; font-weight: 700; width: auto;" onclick="alterarStatusWallboxSelecionada('MANUTENCAO')">
+                  <i class="ri-tools-line"></i> Manutenção
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRADE SEMANAL DE HORÁRIOS -->
+        <div class="form-card" style="padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h4 style="font-size: 17px; font-weight: 800; color: #fff;">Grade Semanal de Dias & Horários de Atendimento</h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                Habilite ou desabilite os dias da semana em que os motoristas podem agendar recargas no seu ponto.
+              </p>
+            </div>
+
+            <!-- PRESETS RÁPIDOS -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn" style="background: #1E293B; border: 1px solid var(--border-dark); font-size: 11px; padding: 6px 12px; width: auto; color: #CBD5E1;" onclick="aplicarPresetAgenda('COMERCIAL')">
+                <i class="ri-briefcase-line" style="color: #38BDF8;"></i> Seg a Sex (08h às 20h)
+              </button>
+              <button type="button" class="btn" style="background: #1E293B; border: 1px solid var(--border-dark); font-size: 11px; padding: 6px 12px; width: auto; color: #CBD5E1;" onclick="aplicarPresetAgenda('24H')">
+                <i class="ri-flashlight-line" style="color: var(--primary);"></i> Todos os Dias (24 Horas)
+              </button>
+              <button type="button" class="btn" style="background: #1E293B; border: 1px solid var(--border-dark); font-size: 11px; padding: 6px 12px; width: auto; color: #CBD5E1;" onclick="aplicarPresetAgenda('FIM_DE_SEMANA')">
+                <i class="ri-sun-line" style="color: var(--accent);"></i> Fins de Semana Apenas
+              </button>
+            </div>
+          </div>
+
+          <!-- TABELA DOS 7 DIAS DA SEMANA -->
+          <div class="table-container" style="margin-bottom: 22px;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 170px;">Dia da Semana</th>
+                  <th style="width: 190px;">Disponibilidade no Dia</th>
+                  <th style="width: 170px;">Horário Início</th>
+                  <th style="width: 170px;">Horário Término</th>
+                  <th>Status do Dia</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-grade-semanal">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 25px; color: var(--text-muted);">
+                    Selecione uma estação para carregar a grade semanal...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; padding-top: 18px; border-top: 1px solid var(--border-dark);">
+            <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+              <i class="ri-shield-check-line" style="color: var(--primary); font-size: 16px;"></i>
+              <span>Os motoristas <strong>só poderão agendar nos dias marcados como "Disponível"</strong> dentro do horário configurado.</span>
+            </div>
+            <button type="button" class="btn btn-primary" id="btn-salvar-agenda" style="width: auto; padding: 12px 28px; font-size: 14px; font-weight: 800;" onclick="salvarGradeAgendaCompleta()">
+              <i class="ri-save-3-line"></i> Salvar Horários da Semana
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 4: CADASTRAR NOVO PONTO DE RECARGA -->
       <div id="aba-cadastro" class="tab-pane">
         <div class="form-card">
           <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 6px;">Cadastrar Novo Ponto de Recarga</h3>
@@ -658,20 +1063,13 @@
               <input type="text" id="novo-modelo" class="form-control" placeholder="Ex: Wallbox WEG Smart 7.4kW ou Hub BMW iWallbox" required>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-              <div class="form-group">
-                <label>Potência do Equipamento</label>
-                <select id="novo-potencia" class="form-control" required>
-                  <option value="P_7KW">7.4 kW (Monofásico / Residencial)</option>
-                  <option value="P_11KW">11 kW (Trifásico Residencial / Solar)</option>
-                  <option value="P_22KW">22 kW (Trifásico Rápido Comercial)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label>Preço por Hora de Recarga (R$/h)</label>
-                <input type="number" step="0.50" id="novo-preco" class="form-control" placeholder="15.00" value="15.00" required>
-              </div>
+            <div class="form-group">
+              <label>Potência do Equipamento</label>
+              <select id="novo-potencia" class="form-control" required>
+                <option value="P_7KW">7.4 kW (Monofásico / Residencial)</option>
+                <option value="P_11KW">11 kW (Trifásico Residencial / Solar)</option>
+                <option value="P_22KW">22 kW (Trifásico Rápido Comercial)</option>
+              </select>
             </div>
 
             <div class="form-group">
@@ -716,8 +1114,161 @@
               <input type="url" id="novo-foto" class="form-control" placeholder="https://images.unsplash.com/..." value="https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=800&q=80">
             </div>
 
+            <!-- VALIDAÇÃO DE VAGA DE ESTACIONAMENTO -->
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-dark); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+              <h4 style="font-size: 14px; font-weight: 700; color: #38BDF8; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                <i class="ri-car-line"></i> Vaga de Estacionamento & Autorização de Acesso (Obrigatório)
+              </h4>
+
+              <div class="form-group" style="margin-bottom: 12px;">
+                <label>A residência ou local possui espaço para o veículo estacionar durante a recarga? *</label>
+                <select id="novo-possui-vaga" class="form-control" required onchange="onPossuiVagaChanged('novo')">
+                  <option value="true" selected>✅ Sim, possui espaço/vaga disponível para o veículo</option>
+                  <option value="false">❌ Não possui local para estacionar</option>
+                </select>
+                <div id="novo-alerta-sem-vaga" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); border-radius: 8px; padding: 10px; margin-top: 8px; font-size: 12px; color: #FCA5A5;">
+                  ⚠️ <strong>Requisito Obrigatório:</strong> O serviço exige que o veículo tenha espaço físico seguro para estacionar durante o abastecimento. Sem vaga física ou autorização de condomínio, o ponto não pode ser ativado.
+                </div>
+              </div>
+
+              <div id="novo-box-detalhes-vaga">
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label>Tipo de Vaga / Local de Parada</label>
+                  <select id="novo-tipo-vaga" class="form-control">
+                    <option value="GARAGEM_PRIVATIVA_COBERTA" selected>Garagem Residencial Privativa (Coberta)</option>
+                    <option value="GARAGEM_PRIVATIVA_DESCOBERTA">Garagem Residencial Privativa (Descoberta)</option>
+                    <option value="CONDOMINIO_VISITANTE">Vaga no Condomínio (Acesso liberado p/ Visitante)</option>
+                    <option value="COMERCIAL_PATIO">Pátio / Estacionamento Comercial Privativo</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label>Detalhes da Vaga (Opcional)</label>
+                  <input type="text" id="novo-detalhes-vaga" class="form-control" placeholder="Ex: Vaga nº 12 no térreo, ao lado da rampa de entrada">
+                </div>
+
+                <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 12px; color: #CBD5E1;">
+                  <input type="checkbox" id="novo-autorizacao-condominio" checked style="margin-top: 2px; accent-color: var(--primary);">
+                  <span><strong>Autorização Garantida:</strong> Declaro que o condomínio/imóvel autoriza o acesso do motorista e que há espaço hábil para a manobra.</span>
+                </label>
+              </div>
+            </div>
+
             <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
-              <i class="ri-check-line"></i> Gravar Ponto de Recarga no Banco de Dados
+              <i class="ri-check-line"></i> Gravar Ponto de Recarga
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ABA 5: MEU PERFIL & ALTERAR CADASTRO DO HOST -->
+      <div id="aba-perfil" class="tab-pane">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+              <i class="ri-user-settings-fill" style="color: var(--primary);"></i> Meu Perfil & Alterar Cadastro do Anfitrião
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">
+              Atualize seus dados de contato, foto de perfil, dados de recebimento (PIX) e senha de acesso.
+            </p>
+          </div>
+          <button class="btn" style="background: #1E293B; border: 1px solid var(--border-dark); color: #fff; font-size: 12px; width: auto;" onclick="carregarDadosPerfilHost()">
+            <i class="ri-refresh-line"></i> Recarregar Dados
+          </button>
+        </div>
+
+        <div class="form-card" style="padding: 28px; max-width: 860px; margin: 0 auto;">
+          <form id="form-perfil-host" onsubmit="salvarPerfilHost(event)">
+
+            <!-- SEÇÃO 1: FOTO DO ANFITRIÃO -->
+            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid var(--border-dark);">
+              <div style="position: relative; margin-bottom: 14px;">
+                <img id="host-perfil-avatar-preview" 
+                     src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80" 
+                     alt="Foto do Host" 
+                     style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); box-shadow: 0 8px 24px rgba(0,208,132,0.25);">
+                
+                <button type="button" 
+                        onclick="document.getElementById('host-upload-foto-input').click()" 
+                        style="position: absolute; bottom: 4px; right: 4px; background: var(--primary); color: #064E3B; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #0F172A; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);" 
+                        title="Enviar foto do computador">
+                  <i class="ri-camera-fill"></i>
+                </button>
+                <input type="file" id="host-upload-foto-input" accept="image/*" style="display: none;" onchange="handleUploadFotoHost(event)">
+              </div>
+
+              <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 6px;">Foto de Perfil do Anfitrião</div>
+              <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                <button type="button" class="btn" style="background: rgba(0,208,132,0.15); color: var(--primary); border: 1px solid rgba(0,208,132,0.3); font-size: 12px; padding: 7px 16px; width: auto;" onclick="document.getElementById('host-upload-foto-input').click()">
+                  <i class="ri-camera-line"></i> Alterar Foto de Perfil
+                </button>
+              </div>
+
+              <!-- Campo oculto para URL/Base64 da foto -->
+              <input type="hidden" id="host-perfil-foto-val" value="">
+            </div>
+
+            <!-- SEÇÃO 2: DADOS PESSOAIS & CONTATO -->
+            <div style="font-size: 13px; font-weight: 800; color: #38BDF8; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+              <i class="ri-user-3-line"></i> 1. Dados Pessoais & Contato
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Nome Completo do Anfitrião *</label>
+                <input type="text" id="host-perfil-nome" class="form-control" required placeholder="Seu nome completo">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>CPF / CNPJ do Titular</label>
+                <input type="text" id="host-perfil-cpf" class="form-control" placeholder="000.000.000-00">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Telefone / WhatsApp *</label>
+                <input type="text" id="host-perfil-telefone" class="form-control" required placeholder="(00) 00000-0000">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>E-mail de Login *</label>
+                <input type="email" id="host-perfil-email" class="form-control" required placeholder="seu@email.com">
+              </div>
+            </div>
+
+            <!-- SEÇÃO 3: FORMA DE RECEBIMENTO FINANCEIRO -->
+            <div style="font-size: 13px; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+              <i class="ri-bank-card-line"></i> 2. Forma de Recebimento dos Repasses (PIX)
+            </div>
+
+            <div class="form-group" style="margin-bottom: 22px;">
+              <label>Chave PIX / Dados da Conta de Recebimento *</label>
+              <input type="text" id="host-perfil-pix" class="form-control" required placeholder="Ex: carlos@recargafacil.com (Nubank) ou Chave Aleatória">
+              <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                💰 Os valores líquidos de cada recarga realizada em suas estações (75% do total) serão creditados nesta conta/chave PIX.
+              </small>
+            </div>
+
+            <!-- SEÇÃO 4: ALTERAÇÃO DE SENHA -->
+            <div style="font-size: 13px; font-weight: 800; color: #E2E8F0; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+              <i class="ri-lock-password-line"></i> 3. Alteração de Senha (Segurança)
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Nova Senha (opcional)</label>
+                <input type="password" id="host-perfil-nova-senha" class="form-control" placeholder="Deixe em branco para manter a atual">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Confirmar Nova Senha</label>
+                <input type="password" id="host-perfil-confirma-senha" class="form-control" placeholder="Repita a nova senha">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="btn-salvar-perfil-host" style="width: 100%; padding: 14px; font-size: 14px; font-weight: 800;">
+              <i class="ri-save-3-line"></i> Salvar Alterações
             </button>
           </form>
         </div>
@@ -736,9 +1287,15 @@
         try {
           currentHost = JSON.parse(savedHost);
           exibirDashboardHost();
+          return;
         } catch (e) {
           sessionStorage.removeItem('recarga_facil_host');
         }
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('cadastro') === 'host') {
+        alternarAbaAuthHost('cadastro');
       }
     });
 
@@ -788,14 +1345,369 @@
       }
     }
 
+    function alternarAbaAuthHost(aba) {
+      const box = document.querySelector('.login-box');
+      const painelLogin = document.getElementById('host-painel-login');
+      const painelCadastro = document.getElementById('host-painel-cadastro');
+      const tabLogin = document.getElementById('host-tab-login');
+      const tabCadastro = document.getElementById('host-tab-cadastro');
+
+      if (!painelLogin || !painelCadastro) return;
+
+      if (aba === 'cadastro') {
+        painelLogin.style.display = 'none';
+        painelCadastro.style.display = 'block';
+        if (box) box.classList.add('wide');
+        tabCadastro.style.background = 'var(--primary)';
+        tabCadastro.style.color = '#064E3B';
+        tabLogin.style.background = 'transparent';
+        tabLogin.style.color = 'var(--text-muted)';
+      } else {
+        painelLogin.style.display = 'block';
+        painelCadastro.style.display = 'none';
+        if (box) box.classList.remove('wide');
+        tabLogin.style.background = 'var(--primary)';
+        tabLogin.style.color = '#064E3B';
+        tabCadastro.style.background = 'transparent';
+        tabCadastro.style.color = 'var(--text-muted)';
+      }
+    }
+
+    function toggleComodidadeChip(el, comodidade) {
+      el.classList.toggle('selected');
+      atualizarComodidadesInput();
+    }
+
+    function atualizarComodidadesInput() {
+      const chips = document.querySelectorAll('#bloco-servicos-comercial .amenity-chip.selected');
+      const selecionadas = Array.from(chips).map(c => c.getAttribute('data-value'));
+      const input = document.getElementById('host-cad-comodidades');
+      if (input) input.value = selecionadas.join(', ');
+    }
+
+    function onTipoAmbienteChanged() {
+      const tipo = document.getElementById('host-cad-ambiente').value;
+      const dicaAmbiente = document.getElementById('dica-ambiente');
+      if (tipo === 'COMERCIAL') {
+        if (dicaAmbiente) {
+          dicaAmbiente.innerHTML = '💼 <strong>Ambiente Comercial:</strong> Destaque os serviços e facilidades oferecidos aos clientes e motoristas!';
+        }
+      } else {
+        if (dicaAmbiente) {
+          dicaAmbiente.innerHTML = '🏡 <strong>Ambiente Residencial:</strong> Garagem privada, casa ou condomínio.';
+        }
+      }
+    }
+
+    async function buscarCoordenadasPorEndereco() {
+      const endereco = document.getElementById('host-cad-endereco').value.trim();
+      const statusEl = document.getElementById('geo-status-msg');
+      if (!endereco) {
+        alert('Por favor, informe o endereço completo antes de buscar as coordenadas.');
+        return;
+      }
+
+      statusEl.style.display = 'block';
+      statusEl.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Buscando coordenadas GPS no OpenStreetMap...';
+      statusEl.style.color = '#38BDF8';
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(endereco)}`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+        const data = await res.json();
+
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lon = parseFloat(data[0].lon);
+          document.getElementById('host-cad-lat').value = lat.toFixed(6);
+          document.getElementById('host-cad-lng').value = lon.toFixed(6);
+
+          statusEl.innerHTML = `✅ Coordenadas encontradas com sucesso! (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+          statusEl.style.color = '#00D084';
+        } else {
+          statusEl.innerHTML = '⚠️ Endereço não localizado automaticamente no mapa. Você pode ajustar a latitude e longitude manualmente.';
+          statusEl.style.color = '#F59E0B';
+        }
+      } catch (err) {
+        statusEl.innerHTML = '⚠️ Não foi possível consultar o GPS automático. Preencha a latitude e longitude manualmente nos campos abaixo.';
+        statusEl.style.color = '#EF4444';
+      }
+    }
+
+    function usarLocalizacaoAtualHost() {
+      const statusEl = document.getElementById('geo-status-msg');
+      if (!navigator.geolocation) {
+        alert('Geolocalização não é suportada pelo seu navegador.');
+        return;
+      }
+
+      statusEl.style.display = 'block';
+      statusEl.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Obtendo localização atual via GPS do dispositivo...';
+      statusEl.style.color = '#38BDF8';
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          document.getElementById('host-cad-lat').value = lat.toFixed(6);
+          document.getElementById('host-cad-lng').value = lon.toFixed(6);
+          statusEl.innerHTML = `✅ GPS atual obtido com sucesso! (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+          statusEl.style.color = '#00D084';
+        },
+        err => {
+          statusEl.innerHTML = '⚠️ Permissão de localização negada ou indisponível. Preencha manualmente.';
+          statusEl.style.color = '#EF4444';
+        }
+      );
+    }
+
+    function onPossuiVagaChanged(prefix) {
+      const select = document.getElementById(`${prefix}-possui-vaga`);
+      const alerta = document.getElementById(`${prefix}-alerta-sem-vaga`);
+      const boxDetalhes = document.getElementById(`${prefix}-box-detalhes-vaga`);
+      const possui = select.value === 'true';
+
+      if (!possui) {
+        if (alerta) alerta.style.display = 'block';
+        if (boxDetalhes) boxDetalhes.style.opacity = '0.35';
+      } else {
+        if (alerta) alerta.style.display = 'none';
+        if (boxDetalhes) boxDetalhes.style.opacity = '1';
+      }
+    }
+
+    async function realizarCadastroHost(event) {
+      event.preventDefault();
+
+      const nome = document.getElementById('host-cad-nome').value.trim();
+      const cpf = document.getElementById('host-cad-cpf').value.trim();
+      const email = document.getElementById('host-cad-email').value.trim();
+      const telefone = document.getElementById('host-cad-telefone').value.trim();
+      const senha = document.getElementById('host-cad-senha').value.trim();
+      const dadosBancarios = document.getElementById('host-cad-pix').value.trim();
+
+      const modelo = document.getElementById('host-cad-modelo').value.trim();
+      const potencia = document.getElementById('host-cad-potencia').value;
+      const precoHoraEl = document.getElementById('host-cad-preco');
+      const precoHora = precoHoraEl ? parseFloat(precoHoraEl.value) || 15.00 : 15.00;
+      const fotoUrl = document.getElementById('host-cad-foto').value.trim();
+
+      const tipoAmbiente = document.getElementById('host-cad-ambiente').value;
+      const enderecoCompleto = document.getElementById('host-cad-endereco').value.trim();
+      const latitude = parseFloat(document.getElementById('host-cad-lat').value) || -23.5100;
+      const longitude = parseFloat(document.getElementById('host-cad-lng').value) || -47.4600;
+      const comodidades = document.getElementById('host-cad-comodidades').value.trim();
+      const instrucoesAcesso = document.getElementById('host-cad-instrucoes').value.trim();
+      const acessoEnderecoAposPagamento = document.getElementById('host-cad-acesso-pos-pagamento').checked;
+
+      // Validação obrigatória de vaga de estacionamento
+      const possuiVagaEstacionamento = document.getElementById('host-cad-possui-vaga').value === 'true';
+      if (!possuiVagaEstacionamento) {
+        alert("⚠️ Requisito Obrigatório para o Cadastro:\n\nNem todas as residências com carregador dispõem de espaço para um terceiro estacionar, ou o condomínio pode restringir o acesso.\n\nPara a segurança e viabilidade do atendimento, é obrigatório possuir espaço físico para estacionar durante a recarga. O ponto não pode ser ativado sem vaga garantida.");
+        return;
+      }
+      const tipoVagaEstacionamento = document.getElementById('host-cad-tipo-vaga').value;
+      const detalhesVaga = document.getElementById('host-cad-detalhes-vaga').value.trim();
+      const autorizacaoCondominio = document.getElementById('host-cad-autorizacao-condominio').checked;
+
+      const btn = document.getElementById('btn-cadastrar-host');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Cadastrando Anfitrião & Estação...';
+
+      try {
+        const payload = {
+          nome, cpf, email, telefone, senha, dadosBancarios,
+          modelo, potencia, status: "DISPONIVEL", precoHora, fotoUrl,
+          tipoAmbiente, enderecoCompleto, latitude, longitude,
+          comodidades, instrucoesAcesso, acessoEnderecoAposPagamento,
+          possuiVagaEstacionamento, tipoVagaEstacionamento, autorizacaoCondominio, detalhesVaga
+        };
+
+        const fotoHostPerfil = document.getElementById('host-cad-foto-perfil').value;
+        if (fotoHostPerfil) {
+          payload.fotoUrl = fotoHostPerfil;
+        }
+
+        const response = await fetch(`${API_BASE}/auth/cadastro-host`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          currentHost = await response.json();
+          sessionStorage.setItem('recarga_facil_host', JSON.stringify(currentHost));
+          showToast(`Cadastro realizado com sucesso! Bem-vindo, ${currentHost.nome}!`);
+          exibirDashboardHost();
+        } else {
+          const err = await response.json();
+          alert(err.error || 'Falha ao cadastrar Anfitrião.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao conectar ao servidor Java Spring Boot.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ri-check-line"></i> Concluir Cadastro e Acessar Painel';
+      }
+    }
+
+    function handleUploadFotoHostCad(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result;
+        document.getElementById('host-cad-foto-preview').src = base64;
+        document.getElementById('host-cad-foto-perfil').value = base64;
+        showToast('Foto de perfil carregada!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleUploadFotoHost(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result;
+        document.getElementById('host-perfil-avatar-preview').src = base64;
+        document.getElementById('host-perfil-foto-val').value = base64;
+        showToast('Foto do perfil pronta para salvar!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function toggleGaleriaAvataresHost() {
+      const galeria = document.getElementById('galeria-avatares-host');
+      if (galeria) {
+        galeria.style.display = (galeria.style.display === 'none' || galeria.style.display === '') ? 'block' : 'none';
+      }
+    }
+
+    function selecionarAvatarHost(url) {
+      document.getElementById('host-perfil-avatar-preview').src = url;
+      document.getElementById('host-perfil-foto-val').value = url;
+      toggleGaleriaAvataresHost();
+      showToast('Avatar selecionado!');
+    }
+
+    function abrirPerfilHost() {
+      const tabBtns = document.querySelectorAll('.tabs-nav .tab-btn');
+      const btnPerfil = document.getElementById('tab-btn-perfil') || tabBtns[4];
+      trocarAbaHost('aba-perfil', btnPerfil);
+      carregarDadosPerfilHost();
+    }
+
+    function carregarDadosPerfilHost() {
+      if (!currentHost) return;
+
+      document.getElementById('host-perfil-nome').value = currentHost.nome || '';
+      document.getElementById('host-perfil-cpf').value = currentHost.cpf || '';
+      document.getElementById('host-perfil-telefone').value = currentHost.telefone || '';
+      document.getElementById('host-perfil-email').value = currentHost.email || '';
+      document.getElementById('host-perfil-pix').value = currentHost.dadosBancarios || '';
+      document.getElementById('host-perfil-nova-senha').value = '';
+      document.getElementById('host-perfil-confirma-senha').value = '';
+
+      const foto = currentHost.fotoUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80';
+      document.getElementById('host-perfil-avatar-preview').src = foto;
+      document.getElementById('host-perfil-foto-val').value = currentHost.fotoUrl || '';
+
+      const avatarHeader = document.getElementById('host-avatar-header');
+      if (avatarHeader) avatarHeader.src = foto;
+    }
+
+    async function salvarPerfilHost(event) {
+      event.preventDefault();
+      if (!currentHost) return;
+
+      const novaSenha = document.getElementById('host-perfil-nova-senha').value;
+      const confirmaSenha = document.getElementById('host-perfil-confirma-senha').value;
+
+      if (novaSenha && novaSenha !== confirmaSenha) {
+        alert('A confirmação da nova senha não confere. Por favor, digite a mesma senha nos dois campos.');
+        return;
+      }
+
+      const nome = document.getElementById('host-perfil-nome').value.trim();
+      const cpf = document.getElementById('host-perfil-cpf').value.trim();
+      const telefone = document.getElementById('host-perfil-telefone').value.trim();
+      const email = document.getElementById('host-perfil-email').value.trim();
+      const dadosBancarios = document.getElementById('host-perfil-pix').value.trim();
+      const fotoUrl = document.getElementById('host-perfil-foto-val').value || document.getElementById('host-perfil-avatar-preview').src;
+
+      const payload = {
+        nome,
+        cpf,
+        telefone,
+        email,
+        dadosBancarios,
+        fotoUrl
+      };
+
+      if (novaSenha) {
+        payload.senha = novaSenha;
+      }
+
+      const btn = document.getElementById('btn-salvar-perfil-host');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Salvando Alterações...';
+
+      try {
+        const response = await fetch(`${API_BASE}/hosts/${currentHost.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const hostAtualizado = await response.json();
+          currentHost = hostAtualizado;
+          sessionStorage.setItem('recarga_facil_host', JSON.stringify(currentHost));
+
+          // Atualiza dados na tela
+          document.getElementById('host-nome-display').innerText = currentHost.nome;
+          if (document.getElementById('host-pix-display')) {
+            document.getElementById('host-pix-display').innerText = currentHost.dadosBancarios;
+          }
+          if (document.getElementById('host-avatar-header')) {
+            document.getElementById('host-avatar-header').src = currentHost.fotoUrl || fotoUrl;
+          }
+
+          showToast("Cadastro e dados do Anfitrião atualizados com sucesso!");
+        } else {
+          const err = await response.json();
+          alert(err.error || 'Falha ao atualizar dados do Anfitrião.');
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Erro ao conectar ao servidor Java Spring Boot.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ri-save-3-line"></i> Salvar Alterações';
+      }
+    }
+
     function exibirDashboardHost() {
       document.getElementById('host-login-screen').style.display = 'none';
       document.getElementById('host-dashboard-screen').style.display = 'flex';
 
       document.getElementById('host-nome-display').innerText = currentHost.nome;
-      document.getElementById('host-pix-display').innerText = currentHost.dadosBancarios || currentHost.email;
+      if (document.getElementById('host-pix-display')) {
+        document.getElementById('host-pix-display').innerText = currentHost.dadosBancarios || currentHost.email;
+      }
+
+      // Foto de perfil no header
+      const avatarHeader = document.getElementById('host-avatar-header');
+      if (avatarHeader) {
+        avatarHeader.src = currentHost.fotoUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80';
+      }
 
       carregarDadosDoHost();
+      carregarDadosPerfilHost();
     }
 
     function fazerLogoutHost() {
@@ -837,13 +1749,26 @@
         // 3. Minhas Estações
         const resWallboxes = await fetch(`${API_BASE}/hosts/${currentHost.id}/wallboxes`);
         if (resWallboxes.ok) {
-          const wallboxes = await resWallboxes.json();
-          renderizarGridWallboxes(wallboxes);
+          hostWallboxes = await resWallboxes.json();
+          renderizarGridWallboxes(hostWallboxes);
+          popularSelectEstacoesAgenda(hostWallboxes);
         }
       } catch (e) {
         console.error("Erro ao carregar dados do host:", e);
       }
     }
+
+    let hostWallboxes = [];
+    let selectedWallboxId = null;
+    const DIAS_SEMANA_CONFIG = [
+      { key: 'SEGUNDA', label: 'Segunda-feira', icone: 'ri-calendar-line' },
+      { key: 'TERCA', label: 'Terça-feira', icone: 'ri-calendar-line' },
+      { key: 'QUARTA', label: 'Quarta-feira', icone: 'ri-calendar-line' },
+      { key: 'QUINTA', label: 'Quinta-feira', icone: 'ri-calendar-line' },
+      { key: 'SEXTA', label: 'Sexta-feira', icone: 'ri-calendar-line' },
+      { key: 'SABADO', label: 'Sábado', icone: 'ri-sun-line' },
+      { key: 'DOMINGO', label: 'Domingo', icone: 'ri-sun-fill' }
+    ];
 
     function renderizarTabelaReservas(reservas) {
       const tbody = document.getElementById('tabela-reservas-host');
@@ -919,7 +1844,7 @@
         grid.innerHTML = `
           <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--bg-card); border-radius: 16px;">
             <p style="color: var(--text-muted);">Você ainda não cadastrou nenhuma estação.</p>
-            <button class="btn btn-primary mt-3" style="width: auto;" onclick="trocarAbaHost('aba-cadastro', document.querySelectorAll('.tab-btn')[2])">
+            <button class="btn btn-primary mt-3" style="width: auto;" onclick="trocarAbaHost('aba-cadastro', document.querySelectorAll('.tab-btn')[3])">
               Cadastrar Minha Primeira Estação
             </button>
           </div>
@@ -931,6 +1856,12 @@
         const local = wb.local || {};
         const potenciaFormatada = wb.potencia ? wb.potencia.replace('P_', '').replace('KW', ' kW') : '7.4 kW';
         const preco = Number(wb.precoHora || 15).toFixed(2).replace('.', ',');
+        const isDisponivel = (wb.status === 'DISPONIVEL');
+        const statusBadgeClass = isDisponivel ? 'status-concluida' : (wb.status === 'MANUTENCAO' ? 'status-pendente' : 'status-cancelada');
+
+        const vagaDesc = local.tipoVagaEstacionamento 
+          ? local.tipoVagaEstacionamento.replace(/_/g, ' ') 
+          : 'Vaga Disponível';
 
         return `
           <div class="wallbox-card">
@@ -938,11 +1869,18 @@
             <div class="wallbox-body">
               <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
                 <h4 style="font-size: 15px; font-weight: 800; color: #fff;">${wb.modelo}</h4>
-                <span class="status-badge status-concluida">${wb.status || 'DISPONÍVEL'}</span>
+                <span class="status-badge ${statusBadgeClass}">${wb.status || 'DISPONIVEL'}</span>
               </div>
-              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
                 <i class="ri-map-pin-line"></i> ${local.enderecoCompleto || 'Endereço cadastrado'}
               </p>
+
+              <!-- INFORMAÇÃO DA VAGA DE ESTACIONAMENTO -->
+              <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-dark); border-radius: 8px; padding: 6px 10px; margin-bottom: 12px; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+                <i class="ri-car-fill" style="color: #38BDF8;"></i>
+                <span style="color: #E2E8F0;"><strong>Estacionamento:</strong> ${vagaDesc}</span>
+              </div>
+
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-dark);">
                 <div>
                   <span style="font-size: 11px; color: var(--text-muted);">Potência</span>
@@ -953,21 +1891,315 @@
                   <div style="font-weight: 800; color: var(--primary);">R$ ${preco}/h</div>
                 </div>
               </div>
+
+              <!-- BOTÕES RÁPIDOS DE CONTROLE DA ESTAÇÃO -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;">
+                <button type="button" class="btn" style="background: ${isDisponivel ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; color: ${isDisponivel ? '#EF4444' : '#10B981'}; border: 1px solid ${isDisponivel ? '#EF4444' : '#10B981'}; font-size: 11px; padding: 6px; font-weight: 700;" onclick="alternarStatusWallboxCard(${wb.id}, '${wb.status}')">
+                  <i class="${isDisponivel ? 'ri-pause-circle-line' : 'ri-play-circle-line'}"></i> ${isDisponivel ? 'Pausar Serviço' : 'Ativar Serviço'}
+                </button>
+                <button type="button" class="btn" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; padding: 6px; font-weight: 700;" onclick="abrirAgendaDaEstacao(${wb.id})">
+                  <i class="ri-calendar-event-line"></i> Agenda & Horários
+                </button>
+              </div>
             </div>
           </div>
         `;
       }).join('');
     }
 
+    async function alternarStatusWallboxCard(idWallbox, statusAtual) {
+      const novoStatus = (statusAtual === 'DISPONIVEL') ? 'INDISPONIVEL' : 'DISPONIVEL';
+      try {
+        const response = await fetch(`${API_BASE}/wallboxes/${idWallbox}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: novoStatus })
+        });
+        if (response.ok) {
+          showToast(`Estação #${idWallbox} agora está ${novoStatus}! Atualizado no mapa.`);
+          carregarDadosDoHost();
+          if (selectedWallboxId === idWallbox) {
+            atualizarBadgeStatusSelecionado(novoStatus);
+          }
+        } else {
+          alert('Falha ao alternar status da estação.');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function popularSelectEstacoesAgenda(wallboxes) {
+      const select = document.getElementById('select-estacao-agenda');
+      if (!select) return;
+
+      if (!wallboxes || wallboxes.length === 0) {
+        select.innerHTML = '<option value="">Nenhuma estação cadastrada</option>';
+        return;
+      }
+
+      select.innerHTML = wallboxes.map(wb => `
+        <option value="${wb.id}" ${wb.id === selectedWallboxId ? 'selected' : ''}>
+          ${wb.modelo} (ID: #${wb.id} - ${wb.status})
+        </option>
+      `).join('');
+
+      if (!selectedWallboxId && wallboxes.length > 0) {
+        selectedWallboxId = wallboxes[0].id;
+      }
+
+      carregarAgendaDoHost(selectedWallboxId);
+    }
+
+    function onEstacaoAgendaSelecionada() {
+      const select = document.getElementById('select-estacao-agenda');
+      selectedWallboxId = Number(select.value);
+      carregarAgendaDoHost(selectedWallboxId);
+    }
+
+    function abrirAgendaDaEstacao(idWallbox) {
+      selectedWallboxId = idWallbox;
+      const tabBtns = document.querySelectorAll('.tabs-nav .tab-btn');
+      trocarAbaHost('aba-agenda', tabBtns[2]);
+      const select = document.getElementById('select-estacao-agenda');
+      if (select) select.value = String(idWallbox);
+      carregarAgendaDoHost(idWallbox);
+    }
+
+    async function alterarStatusWallboxSelecionada(novoStatus) {
+      if (!selectedWallboxId) {
+        alert('Selecione uma estação primeiro.');
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE}/wallboxes/${selectedWallboxId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: novoStatus })
+        });
+        if (response.ok) {
+          showToast(`Status da estação #${selectedWallboxId} alterado para ${novoStatus}!`);
+          atualizarBadgeStatusSelecionado(novoStatus);
+          carregarDadosDoHost();
+        } else {
+          alert('Erro ao atualizar status da estação.');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function atualizarBadgeStatusSelecionado(status) {
+      const badgeContainer = document.getElementById('badge-status-atual-wallbox');
+      if (!badgeContainer) return;
+
+      let badgeHtml = '';
+      if (status === 'DISPONIVEL') {
+        badgeHtml = `<span class="status-badge status-concluida" style="font-size: 13px; padding: 5px 12px;"><i class="ri-checkbox-circle-fill"></i> DISPONÍVEL</span>`;
+      } else if (status === 'MANUTENCAO') {
+        badgeHtml = `<span class="status-badge status-pendente" style="font-size: 13px; padding: 5px 12px;"><i class="ri-tools-fill"></i> MANUTENÇÃO</span>`;
+      } else {
+        badgeHtml = `<span class="status-badge status-cancelada" style="font-size: 13px; padding: 5px 12px;"><i class="ri-pause-circle-fill"></i> INDISPONÍVEL / PAUSADO</span>`;
+      }
+      badgeContainer.innerHTML = badgeHtml;
+    }
+
+    async function carregarAgendaDoHost(idOpcional) {
+      const idWb = idOpcional || selectedWallboxId;
+      if (!idWb) return;
+
+      // Atualiza badge de status da estação
+      const wb = hostWallboxes.find(w => w.id === idWb);
+      if (wb) {
+        atualizarBadgeStatusSelecionado(wb.status || 'DISPONIVEL');
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/agendas/wallbox/${idWb}`);
+        let agendas = [];
+        if (response.ok) {
+          agendas = await response.json();
+        }
+        renderizarGradeSemanal(agendas);
+      } catch (e) {
+        console.error("Erro ao carregar agenda:", e);
+        renderizarGradeSemanal([]);
+      }
+    }
+
+    function renderizarGradeSemanal(agendasExistentes) {
+      const tbody = document.getElementById('tabela-grade-semanal');
+      if (!tbody) return;
+
+      const gradeHtml = DIAS_SEMANA_CONFIG.map((dia, idx) => {
+        // Localiza se já existe registro cadastrado para este dia da semana
+        const agendaItem = agendasExistentes.find(a => a.diaSemana === dia.key);
+        const estaAtivo = agendaItem ? Boolean(agendaItem.estaAtivo) : (dia.key !== 'DOMINGO');
+        const horaInicio = (agendaItem && agendaItem.horarioInicio) ? agendaItem.horarioInicio.substring(0, 5) : '08:00';
+        const horaFim = (agendaItem && agendaItem.horarioFim) ? agendaItem.horarioFim.substring(0, 5) : '20:00';
+
+        return `
+          <tr data-dia="${dia.key}">
+            <td>
+              <div style="font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
+                <i class="${dia.icone}" style="color: var(--primary);"></i> ${dia.label}
+              </div>
+            </td>
+            <td>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+                <input type="checkbox" class="check-dia-ativo" id="check-ativo-${idx}" ${estaAtivo ? 'checked' : ''} 
+                       style="accent-color: var(--primary); transform: scale(1.2);"
+                       onchange="atualizarStatusVisualDia(${idx})">
+                <span id="texto-ativo-${idx}" style="font-weight: 700; font-size: 13px; color: ${estaAtivo ? 'var(--primary)' : 'var(--text-muted)'};">
+                  ${estaAtivo ? 'Disponível p/ Recarga' : 'Indisponível (Pausado)'}
+                </span>
+              </label>
+            </td>
+            <td>
+              <input type="time" class="form-control input-hora-inicio" id="hora-inicio-${idx}" value="${horaInicio}" 
+                     style="background: #0F172A; padding: 6px 10px; font-size: 13px; font-weight: 600; width: 130px; ${!estaAtivo ? 'opacity: 0.4;' : ''}">
+            </td>
+            <td>
+              <input type="time" class="form-control input-hora-fim" id="hora-fim-${idx}" value="${horaFim}" 
+                     style="background: #0F172A; padding: 6px 10px; font-size: 13px; font-weight: 600; width: 130px; ${!estaAtivo ? 'opacity: 0.4;' : ''}">
+            </td>
+            <td>
+              <span id="badge-status-dia-${idx}" class="status-badge ${estaAtivo ? 'status-concluida' : 'status-cancelada'}" style="font-size: 11px;">
+                ${estaAtivo ? 'Ativo' : 'Indisponível'}
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.innerHTML = gradeHtml;
+    }
+
+    function atualizarStatusVisualDia(idx) {
+      const check = document.getElementById(`check-ativo-${idx}`);
+      const texto = document.getElementById(`texto-ativo-${idx}`);
+      const hIni = document.getElementById(`hora-inicio-${idx}`);
+      const hFim = document.getElementById(`hora-fim-${idx}`);
+      const badge = document.getElementById(`badge-status-dia-${idx}`);
+
+      if (check.checked) {
+        texto.innerText = 'Disponível p/ Recarga';
+        texto.style.color = 'var(--primary)';
+        hIni.style.opacity = '1';
+        hFim.style.opacity = '1';
+        badge.className = 'status-badge status-concluida';
+        badge.innerText = 'Ativo';
+      } else {
+        texto.innerText = 'Indisponível (Pausado)';
+        texto.style.color = 'var(--text-muted)';
+        hIni.style.opacity = '0.4';
+        hFim.style.opacity = '0.4';
+        badge.className = 'status-badge status-cancelada';
+        badge.innerText = 'Indisponível';
+      }
+    }
+
+    function aplicarPresetAgenda(tipo) {
+      DIAS_SEMANA_CONFIG.forEach((dia, idx) => {
+        const check = document.getElementById(`check-ativo-${idx}`);
+        const hIni = document.getElementById(`hora-inicio-${idx}`);
+        const hFim = document.getElementById(`hora-fim-${idx}`);
+
+        if (tipo === 'COMERCIAL') {
+          const isSemana = (dia.key !== 'SABADO' && dia.key !== 'DOMINGO');
+          check.checked = isSemana;
+          hIni.value = '08:00';
+          hFim.value = '20:00';
+        } else if (tipo === '24H') {
+          check.checked = true;
+          hIni.value = '00:00';
+          hFim.value = '23:59';
+        } else if (tipo === 'FIM_DE_SEMANA') {
+          const isFim = (dia.key === 'SABADO' || dia.key === 'DOMINGO');
+          check.checked = isFim;
+          hIni.value = '08:00';
+          hFim.value = '22:00';
+        }
+
+        atualizarStatusVisualDia(idx);
+      });
+
+      showToast(`Pré-configuração aplicada! Clique em "Salvar Horários da Semana" para confirmar.`);
+    }
+
+    async function salvarGradeAgendaCompleta() {
+      if (!selectedWallboxId) {
+        alert('Selecione uma estação primeiro.');
+        return;
+      }
+
+      const rows = document.querySelectorAll('#tabela-grade-semanal tr');
+      const gradePayload = [];
+
+      rows.forEach((tr, idx) => {
+        const diaSemana = tr.getAttribute('data-dia');
+        const estaAtivo = document.getElementById(`check-ativo-${idx}`).checked;
+        let hInicio = document.getElementById(`hora-inicio-${idx}`).value;
+        let hFim = document.getElementById(`hora-fim-${idx}`).value;
+
+        // Completa segundos se não tiver
+        if (hInicio.length === 5) hInicio += ':00';
+        if (hFim.length === 5) hFim += ':00';
+
+        gradePayload.push({
+          idWallbox: selectedWallboxId,
+          diaSemana: diaSemana,
+          horarioInicio: hInicio,
+          horarioFim: hFim,
+          estaAtivo: estaAtivo
+        });
+      });
+
+      const btn = document.getElementById('btn-salvar-agenda');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Salvando Horários da Semana...';
+
+      try {
+        const response = await fetch(`${API_BASE}/agendas/wallbox/${selectedWallboxId}/grade`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(gradePayload)
+        });
+
+        if (response.ok) {
+          showToast("Disponibilidade semanal da Wallbox salva com sucesso!");
+          await carregarAgendaDoHost(selectedWallboxId);
+        } else {
+          alert("Erro ao gravar grade semanal de horários.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Erro de conexão com o servidor Java Spring Boot.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ri-save-3-line"></i> Salvar Horários da Semana';
+      }
+    }
+
     async function salvarNovaWallboxHost(event) {
       event.preventDefault();
       if (!currentHost) return;
+
+      // Validação obrigatória de vaga de estacionamento
+      const possuiVagaEstacionamento = document.getElementById('novo-possui-vaga').value === 'true';
+      if (!possuiVagaEstacionamento) {
+        alert("⚠️ Requisito Obrigatório:\n\nPara disponibilizar um ponto de recarga, é mandatório que o local possua espaço físico para o veículo permanecer estacionado durante o abastecimento.");
+        return;
+      }
+      const tipoVagaEstacionamento = document.getElementById('novo-tipo-vaga').value;
+      const detalhesVaga = document.getElementById('novo-detalhes-vaga').value.trim();
+      const autorizacaoCondominio = document.getElementById('novo-autorizacao-condominio').checked;
 
       const payload = {
         idHost: currentHost.id,
         modelo: document.getElementById('novo-modelo').value.trim(),
         potencia: document.getElementById('novo-potencia').value,
-        precoHora: parseFloat(document.getElementById('novo-preco').value),
+        precoHora: 15.00,
         tipoAmbiente: document.getElementById('novo-ambiente').value,
         enderecoCompleto: document.getElementById('novo-endereco').value.trim(),
         latitude: parseFloat(document.getElementById('novo-lat').value),
@@ -976,7 +2208,11 @@
         instrucoesAcesso: document.getElementById('novo-instrucoes').value.trim(),
         fotoUrl: document.getElementById('novo-foto').value.trim(),
         status: "DISPONIVEL",
-        acessoEnderecoAposPagamento: true
+        acessoEnderecoAposPagamento: true,
+        possuiVagaEstacionamento,
+        tipoVagaEstacionamento,
+        autorizacaoCondominio,
+        detalhesVaga
       };
 
       try {
@@ -987,7 +2223,7 @@
         });
 
         if (response.ok) {
-          showToast("Ponto de recarga cadastrado com sucesso no MySQL!");
+          showToast("Ponto de recarga cadastrado com sucesso!");
           document.getElementById('form-cadastrar-wallbox').reset();
           trocarAbaHost('aba-estacoes', document.querySelectorAll('.tab-btn')[1]);
           carregarDadosDoHost();

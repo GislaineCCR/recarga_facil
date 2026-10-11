@@ -519,7 +519,7 @@
           <i class="ri-car-line"></i> Veículos
         </button>
         <button class="tab-btn" onclick="switchTab('tab-hosts')">
-          <i class="ri-home-smile-line"></i> Anfitriões
+          <i class="ri-home-smile-line"></i> Anfitriões (Host)
         </button>
         <button class="tab-btn" onclick="switchTab('tab-wallboxes')">
           <i class="ri-charging-pile-line"></i> Pontos de Recarga
@@ -528,7 +528,7 @@
           <i class="ri-calendar-line"></i> Horários & Disponibilidade
         </button>
         <button class="tab-btn" onclick="switchTab('tab-reservas')">
-          <i class="ri-bookmark-line"></i> Reservas & Agendamentos
+          <i class="ri-calendar-check-line"></i> Consultar Reservas
         </button>
         <button class="tab-btn" onclick="switchTab('tab-pagamentos')">
           <i class="ri-bank-card-line"></i> Transações & Repasses
@@ -604,43 +604,15 @@
         </section>
 
         <!-- ==========================================
-             ABA 2: MOTORISTAS
+             ABA 2: MOTORISTAS (APENAS CONSULTA)
              ========================================== -->
         <section id="tab-motoristas" class="admin-section">
           <div class="section-header">
             <div>
-              <h2><i class="ri-user-add-line" style="color:var(--primary);"></i> Gestão de Motoristas</h2>
-              <p>Cadastro e gerenciamento de condutores de veículos elétricos.</p>
+              <h2><i class="ri-user-line" style="color:var(--primary);"></i> Consulta de Motoristas</h2>
+              <p>Visualização e listagem dos condutores de veículos elétricos cadastrados na plataforma.</p>
             </div>
-          </div>
-
-          <div class="content-box">
-            <h3><i class="ri-edit-line"></i> Novo Cadastro de Motorista</h3>
-            <form onsubmit="handleCadastrarMotorista(event)">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Nome Completo</label>
-                  <input type="text" id="mot-nome" class="form-control" required placeholder="Ex: Roberto Silva">
-                </div>
-                <div class="form-group">
-                  <label>Email de Acesso</label>
-                  <input type="email" id="mot-email" class="form-control" required placeholder="roberto@email.com">
-                </div>
-                <div class="form-group">
-                  <label>Senha</label>
-                  <input type="password" id="mot-senha" class="form-control" required placeholder="******">
-                </div>
-                <div class="form-group">
-                  <label>CPF</label>
-                  <input type="text" id="mot-cpf" class="form-control" required placeholder="000.000.000-00">
-                </div>
-                <div class="form-group">
-                  <label>Telefone / WhatsApp</label>
-                  <input type="text" id="mot-tel" class="form-control" required placeholder="(15) 99999-9999">
-                </div>
-              </div>
-              <button type="submit" class="btn-submit"><i class="ri-save-line"></i> Salvar Motorista</button>
-            </form>
+            <button class="nav-btn" onclick="loadMotoristas()"><i class="ri-refresh-line"></i> Atualizar Lista</button>
           </div>
 
           <div class="content-box">
@@ -663,52 +635,15 @@
         </section>
 
         <!-- ==========================================
-             ABA 3: VEÍCULOS
+             ABA 3: VEÍCULOS (APENAS CONSULTA)
              ========================================== -->
         <section id="tab-veiculos" class="admin-section">
           <div class="section-header">
             <div>
-              <h2><i class="ri-car-line" style="color:var(--primary);"></i> Gestão de Veículos</h2>
-              <p>Cadastro e vinculação de carros elétricos aos seus motoristas.</p>
+              <h2><i class="ri-car-line" style="color:var(--primary);"></i> Consulta de Veículos</h2>
+              <p>Visualização e listagem dos veículos elétricos e seus respectivos condutores cadastrados.</p>
             </div>
-          </div>
-
-          <div class="content-box">
-            <h3><i class="ri-add-circle-line"></i> Novo Veículo Elétrico</h3>
-            <form onsubmit="handleCadastrarVeiculo(event)">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Motorista Proprietário</label>
-                  <select id="veic-motorista-select" class="form-control" required></select>
-                </div>
-                <div class="form-group">
-                  <label>Marca</label>
-                  <input type="text" id="veic-marca" class="form-control" required placeholder="Ex: BYD, Volvo, GWM">
-                </div>
-                <div class="form-group">
-                  <label>Modelo do Carro</label>
-                  <input type="text" id="veic-modelo" class="form-control" required placeholder="Ex: Dolphin Mini">
-                </div>
-                <div class="form-group">
-                  <label>Placa</label>
-                  <input type="text" id="veic-placa" class="form-control" required placeholder="BRA2E19">
-                </div>
-                <div class="form-group">
-                  <label>Renavam</label>
-                  <input type="text" id="veic-renavan" class="form-control" required placeholder="12345678901">
-                </div>
-                <div class="form-group">
-                  <label>Tipo de Conector</label>
-                  <select id="veic-conector" class="form-control">
-                    <option value="TIPO_2">Tipo 2 (Padrão Europeu / Brasileiro)</option>
-                    <option value="CCS2">CCS2 (Combo Rápido DC)</option>
-                    <option value="TIPO_1">Tipo 1 (J1772 Americano)</option>
-                    <option value="GB_T">GB/T (Padrão Chinês)</option>
-                  </select>
-                </div>
-              </div>
-              <button type="submit" class="btn-submit"><i class="ri-save-line"></i> Salvar Veículo</button>
-            </form>
+            <button class="nav-btn" onclick="loadVeiculos()"><i class="ri-refresh-line"></i> Atualizar Lista</button>
           </div>
 
           <div class="content-box">
@@ -721,53 +656,30 @@
                     <th>Motorista</th>
                     <th>Marca/Modelo</th>
                     <th>Placa</th>
-                    <th>Conector</th>
+                    <th>Renavam</th>
+                    <th>Tipo de Conector</th>
                   </tr>
                 </thead>
-                <tbody id="table-veiculos"><tr><td colspan="5">Carregando...</td></tr></tbody>
+                <tbody id="table-veiculos"><tr><td colspan="6">Carregando...</td></tr></tbody>
               </table>
             </div>
           </div>
         </section>
 
         <!-- ==========================================
-             ABA 4: ANFITRIÕES (HOSTS)
+             ABA 4: ANFITRIÕES (HOSTS) (APENAS CONSULTA)
              ========================================== -->
         <section id="tab-hosts" class="admin-section">
           <div class="section-header">
             <div>
-              <h2><i class="ri-home-heart-line" style="color:var(--primary);"></i> Gestão de Anfitriões (Hosts)</h2>
-              <p>Cadastro de proprietários de estações residenciais e comerciais.</p>
+              <h2><i class="ri-home-smile-line" style="color:var(--primary);"></i> Consulta de Anfitriões (Host)</h2>
+              <p>Visualização e listagem dos parceiros anfitriões cadastrados na plataforma.</p>
             </div>
+            <button class="nav-btn" onclick="loadHosts()"><i class="ri-refresh-line"></i> Atualizar Lista</button>
           </div>
 
           <div class="content-box">
-            <h3><i class="ri-add-circle-line"></i> Novo Anfitrião</h3>
-            <form onsubmit="handleCadastrarHost(event)">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Nome Completo / Razão Social</label>
-                  <input type="text" id="host-nome" class="form-control" required placeholder="Ex: Lucas Mendes">
-                </div>
-                <div class="form-group">
-                  <label>Email de Contato</label>
-                  <input type="email" id="host-email" class="form-control" required placeholder="lucas@host.com">
-                </div>
-                <div class="form-group">
-                  <label>Senha</label>
-                  <input type="password" id="host-senha" class="form-control" required placeholder="******">
-                </div>
-                <div class="form-group">
-                  <label>Chave PIX / Dados Bancários para Repasse</label>
-                  <input type="text" id="host-pix" class="form-control" required placeholder="PIX: lucas@host.com (Nubank)">
-                </div>
-              </div>
-              <button type="submit" class="btn-submit"><i class="ri-save-line"></i> Salvar Anfitrião</button>
-            </form>
-          </div>
-
-          <div class="content-box">
-            <h3><i class="ri-list-check"></i> Anfitriões Cadastrados</h3>
+            <h3><i class="ri-list-check"></i> Anfitriões (Host) Cadastrados</h3>
             <div class="table-responsive">
               <table class="data-table">
                 <thead>
@@ -775,80 +687,27 @@
                     <th>ID</th>
                     <th>Nome</th>
                     <th>Email</th>
+                    <th>CPF</th>
+                    <th>Telefone</th>
                     <th>Dados Bancários</th>
                   </tr>
                 </thead>
-                <tbody id="table-hosts"><tr><td colspan="4">Carregando...</td></tr></tbody>
+                <tbody id="table-hosts"><tr><td colspan="6">Carregando...</td></tr></tbody>
               </table>
             </div>
           </div>
         </section>
 
         <!-- ==========================================
-             ABA 5: PONTOS DE RECARGA
+             ABA 5: PONTOS DE RECARGA (APENAS CONSULTA)
              ========================================== -->
         <section id="tab-wallboxes" class="admin-section">
           <div class="section-header">
             <div>
               <h2><i class="ri-charging-pile-fill" style="color:var(--primary);"></i> Estações e Pontos de Recarga</h2>
-              <p>Gerenciamento de endereços, geolocalização e especificações técnicas das Wallboxes.</p>
+              <p>Visualização e listagem das Wallboxes e pontos de recarga cadastrados pelos anfitriões.</p>
             </div>
-          </div>
-
-          <div class="content-box">
-            <h3><i class="ri-add-circle-line"></i> Cadastrar Nova Estação com Localização</h3>
-            <form onsubmit="handleCadastrarWallbox(event)">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Anfitrião Responsável</label>
-                  <select id="wb-host-select" class="form-control" required></select>
-                </div>
-                <div class="form-group">
-                  <label>Modelo do Carregador</label>
-                  <input type="text" id="wb-modelo" class="form-control" required placeholder="Ex: Wallbox Pulsar Plus 7.4kW">
-                </div>
-                <div class="form-group">
-                  <label>Potência Técnica</label>
-                  <select id="wb-potencia" class="form-control">
-                    <option value="P_7KW">7.4 kW (Monofásico)</option>
-                    <option value="P_11KW">11 kW (Trifásico Residencial)</option>
-                    <option value="P_22KW">22 kW (Trifásico Rápido)</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Preço por Hora (R$)</label>
-                  <input type="number" step="0.50" id="wb-preco" class="form-control" required placeholder="15.00">
-                </div>
-                <div class="form-group">
-                  <label>Tipo de Ambiente</label>
-                  <select id="wb-ambiente" class="form-control">
-                    <option value="RESIDENCIAL">Residencial</option>
-                    <option value="COMERCIAL">Comercial</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Comodidades (separadas por vírgula)</label>
-                  <input type="text" id="wb-comodidades" class="form-control" value="wifi,cafe,coberto,cameras">
-                </div>
-                <div class="form-group">
-                  <label>Endereço Completo</label>
-                  <input type="text" id="wb-endereco" class="form-control" required placeholder="Rua Antonio Perez, 480, Sorocaba - SP">
-                </div>
-                <div class="form-group">
-                  <label>Latitude GPS</label>
-                  <input type="number" step="0.000001" id="wb-lat" class="form-control" required placeholder="-23.5238">
-                </div>
-                <div class="form-group">
-                  <label>Longitude GPS</label>
-                  <input type="number" step="0.000001" id="wb-lng" class="form-control" required placeholder="-47.4645">
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                  <label>Instruções de Acesso Seguro (liberadas pós-pagamento)</label>
-                  <input type="text" id="wb-instrucoes" class="form-control" required placeholder="Interfone 01, vaga coberta na entrada da garagem.">
-                </div>
-              </div>
-              <button type="submit" class="btn-submit"><i class="ri-save-line"></i> Salvar Ponto de Recarga</button>
-            </form>
+            <button class="nav-btn" onclick="loadWallboxes()"><i class="ri-refresh-line"></i> Atualizar Lista</button>
           </div>
 
           <div class="content-box">
@@ -939,43 +798,14 @@
         </section>
 
         <!-- ==========================================
-             ABA 7: RESERVAS & AGENDAMENTOS
+             ABA 7: CONSULTA DE RESERVAS & AGENDAMENTOS
              ========================================== -->
         <section id="tab-reservas" class="admin-section">
           <div class="section-header">
             <div>
-              <h2><i class="ri-calendar-check-line" style="color:var(--primary);"></i> Reservas & Agendamentos</h2>
-              <p>Controle de agendamentos e atualização do status de atendimento.</p>
+              <h2><i class="ri-calendar-check-line" style="color:var(--primary);"></i> Consultar Reservas & Agendamentos</h2>
+              <p>Histórico completo de agendamentos e consultas de status das recargas.</p>
             </div>
-          </div>
-
-          <div class="content-box">
-            <h3><i class="ri-add-circle-line"></i> Registrar Nova Reserva</h3>
-            <form onsubmit="handleCadastrarReserva(event)">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Motorista</label>
-                  <select id="res-motorista-select" class="form-control" required></select>
-                </div>
-                <div class="form-group">
-                  <label>Veículo</label>
-                  <select id="res-veiculo-select" class="form-control"></select>
-                </div>
-                <div class="form-group">
-                  <label>Ponto de Recarga (Estação)</label>
-                  <select id="res-wallbox-select" class="form-control" required></select>
-                </div>
-                <div class="form-group">
-                  <label>Data</label>
-                  <input type="date" id="res-data" class="form-control" required>
-                </div>
-                <div class="form-group">
-                  <label>Horário</label>
-                  <input type="time" id="res-hora" class="form-control" value="14:00:00" required>
-                </div>
-              </div>
-              <button type="submit" class="btn-submit"><i class="ri-save-line"></i> Registrar Agendamento</button>
-            </form>
           </div>
 
           <div class="content-box">
@@ -1226,6 +1056,7 @@
             <td>${v.motorista ? v.motorista.nome : '-'}</td>
             <td>${v.marca} ${v.modelo}</td>
             <td>${v.placa}</td>
+            <td>${v.renavan || '-'}</td>
             <td><span class="status-badge DISPONIVEL">${v.tipoConector}</span></td>
           </tr>
         `).join('');
@@ -1277,6 +1108,8 @@
             <td><strong>#${h.id}</strong></td>
             <td>${h.nome}</td>
             <td>${h.email}</td>
+            <td>${h.cpf || '-'}</td>
+            <td>${h.telefone || '-'}</td>
             <td><code>${h.dadosBancarios || '-'}</code></td>
           </tr>
         `).join('');

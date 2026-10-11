@@ -57,6 +57,12 @@ public class HostController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/{id}")
+    @Operation(summary = "Atualizar dados cadastrais do anfitrião (telefone, e-mail, senha, dados bancários, foto)")
+    public ResponseEntity<Host> atualizar(@PathVariable Long id, @RequestBody HostDTO dto) {
+        return ResponseEntity.ok(hostService.atualizar(id, dto));
+    }
+
     @GetMapping("/{id}/wallboxes")
     @Operation(summary = "Listar as estações pertencentes a um anfitrião específico")
     public ResponseEntity<List<Wallbox>> listarWallboxesDoHost(@PathVariable Long id) {

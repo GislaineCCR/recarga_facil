@@ -46,4 +46,15 @@ public class WallboxController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Alterar status da Wallbox (DISPONIVEL, INDISPONIVEL, OCUPADO, MANUTENCAO)")
+    public ResponseEntity<Wallbox> atualizarStatus(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+        String statusStr = payload.get("status");
+        if (statusStr == null || statusStr.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        Wallbox.Status status = Wallbox.Status.valueOf(statusStr.toUpperCase());
+        return ResponseEntity.ok(wallboxService.atualizarStatus(id, status));
+    }
 }

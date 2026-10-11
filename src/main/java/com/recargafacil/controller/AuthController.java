@@ -1,5 +1,6 @@
 package com.recargafacil.controller;
 
+import com.recargafacil.dto.CadastroHostDTO;
 import com.recargafacil.dto.CadastroMotoristaDTO;
 import com.recargafacil.dto.LoginRequest;
 import com.recargafacil.dto.MotoristaDTO;
@@ -141,6 +142,25 @@ public class AuthController {
         try {
             Host host = hostService.cadastrar(dto);
             return ResponseEntity.ok(host);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/cadastro-host")
+    @Operation(summary = "Cadastro completo de novo Host com Wallbox e Local")
+    public ResponseEntity<?> cadastrarHostComWallbox(@RequestBody CadastroHostDTO dto) {
+        try {
+            Host host = hostService.cadastrarComWallbox(dto);
+            Map<String, Object> response = new HashMap<>();
+            response.put("tipo", "HOST");
+            response.put("id", host.getId());
+            response.put("nome", host.getNome());
+            response.put("email", host.getEmail());
+            response.put("dadosBancarios", host.getDadosBancarios());
+            response.put("telefone", host.getTelefone());
+            response.put("cpf", host.getCpf());
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

@@ -19,6 +19,10 @@ public class WallboxDTO {
     private String comodidades;
     private String fotoUrl;
     private Status status;
+    private Boolean possuiVagaEstacionamento;
+    private String tipoVagaEstacionamento;
+    private Boolean autorizacaoCondominio;
+    private String detalhesVaga;
 
     // Getters and Setters
     public Long getIdHost() { return idHost; }
@@ -59,4 +63,16 @@ public class WallboxDTO {
 
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+
+    public Boolean getPossuiVagaEstacionamento() { return possuiVagaEstacionamento; }
+    public void setPossuiVagaEstacionamento(Boolean possuiVagaEstacionamento) { this.possuiVagaEstacionamento = possuiVagaEstacionamento; }
+
+    public String getTipoVagaEstacionamento() { return tipoVagaEstacionamento; }
+    public void setTipoVagaEstacionamento(String tipoVagaEstacionamento) { this.tipoVagaEstacionamento = tipoVagaEstacionamento; }
+
+    public Boolean getAutorizacaoCondominio() { return autorizacaoCondominio; }
+    public void setAutorizacaoCondominio(Boolean autorizacaoCondominio) { this.autorizacaoCondominio = autorizacaoCondominio; }
+
+    public String getDetalhesVaga() { return detalhesVaga; }
+    public void setDetalhesVaga(String detalhesVaga) { this.detalhesVaga = detalhesVaga; }
 }

@@ -37,4 +37,10 @@ public class MotoristaController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Atualizar dados cadastrais do motorista (telefone, nome, etc.)")
+    public ResponseEntity<Motorista> atualizar(@PathVariable Long id, @RequestBody MotoristaDTO dto) {
+        return ResponseEntity.ok(motoristaService.atualizar(id, dto));
+    }
 }

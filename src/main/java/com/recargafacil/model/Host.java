@@ -17,6 +17,11 @@ public class Host {
     private String nome;
     private String email;
     private String dadosBancarios;
+    private String telefone;
+    private String cpf;
+
+    @Column(columnDefinition = "LONGTEXT")
+    private String fotoUrl;
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -29,4 +34,10 @@ public class Host {
     public void setEmail(String email) { this.email = email; }
     public String getDadosBancarios() { return dadosBancarios; }
     public void setDadosBancarios(String dadosBancarios) { this.dadosBancarios = dadosBancarios; }
+    public String getTelefone() { return telefone; }
+    public void setTelefone(String telefone) { this.telefone = telefone; }
+    public String getCpf() { return cpf; }
+    public void setCpf(String cpf) { this.cpf = cpf; }
+    public String getFotoUrl() { return fotoUrl; }
+    public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
 }

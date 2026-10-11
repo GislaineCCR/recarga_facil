@@ -163,6 +163,22 @@ const ApiService = {
   },
 
   /**
+   * BUSCAR HORÁRIOS DA AGENDA DA WALLBOX (RF05)
+   * Conexão Java: GET /api/agendas/wallbox/{idWallbox}
+   */
+  async getAgendasByWallbox(idWallbox) {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/agendas/wallbox/${idWallbox}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.error(`Erro ao buscar agenda da Wallbox #${idWallbox}:`, err);
+    }
+    return [];
+  },
+
+  /**
    * BUSCAR HISTÓRICO DE RESERVAS DO BANCO DE DADOS
    */
   async getReservas() {
@@ -188,6 +204,25 @@ const ApiService = {
       }
     } catch (err) {
       console.error("Erro ao buscar motorista do banco:", err);
+    }
+    return null;
+  },
+
+  /**
+   * ATUALIZAR DADOS DO MOTORISTA NO BANCO DE DADOS
+   */
+  async updateMotorista(id, dto) {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/motoristas/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dto)
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.error("Erro ao atualizar motorista no banco:", err);
     }
     return null;
   },

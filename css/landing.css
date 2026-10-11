@@ -390,8 +390,8 @@
   /* TEAM */
   .team { background: var(--bg); }
   .team-grid {
-    max-width: 900px; margin: 0 auto;
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px;
+    max-width: 1060px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px;
   }
   .team-card { text-align: center; }
   .team-avatar {
@@ -425,6 +425,10 @@
     .steps-grid { grid-template-columns: 1fr; }
     .fin-grid { grid-template-columns: 1fr; }
     .ods-grid { grid-template-columns: repeat(3, 1fr); }
-    .team-grid { grid-template-columns: repeat(3, 1fr); }
+    .team-grid { grid-template-columns: repeat(3, 1fr); gap: 24px 16px; }
     nav .nav-links { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .team-grid { grid-template-columns: repeat(2, 1fr); gap: 20px 12px; }
   }

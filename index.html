@@ -27,7 +27,7 @@
     <a href="#como-funciona">Como funciona</a>
     <a href="#telas">O App</a>
     <a href="#financeiro">Financeiro</a>
-    <a href="host.html" style="color: #38BDF8; font-weight: 700;"><i class="ri-home-wifi-line"></i> Portal do Anfitrião</a>
+    <a href="host.html" style="color: #38BDF8; font-weight: 700;"><i class="ri-home-wifi-line"></i> Portal do Anfitrião (Host)</a>
     <a href="app.html" style="color: #00D084; font-weight: 700;"><i class="ri-charging-pile-2-line"></i> Buscar Recarga (Motorista)</a>
     <a href="admin.html" style="color: #F59E0B; font-weight: 700;"><i class="ri-shield-keyhole-line"></i> Admin</a>
   </div>
@@ -486,14 +486,14 @@
   <p class="section-sub">Liderança, Engenharia e Desenvolvimento de Software · 2026</p>
   <div class="team-grid">
     <div class="team-card">
-      <div class="team-avatar" style="background:#1D9E75">BG</div>
-      <div class="team-name">Breno Garcia</div>
-      <div class="team-role">Desenvolvedor Front-end</div>
+      <div class="team-avatar" style="background:#D4537E">LN</div>
+      <div class="team-name">Letícia Nunes</div>
+      <div class="team-role">Líder do Projeto</div>
     </div>
     <div class="team-card">
       <div class="team-avatar" style="background:#378ADD">EH</div>
       <div class="team-name">Eduardo Henrique</div>
-      <div class="team-role">Analista de Requisitos</div>
+      <div class="team-role">Analista de Requisitos e Negócios</div>
     </div>
     <div class="team-card">
       <div class="team-avatar" style="background:#D85A30">GC</div>
@@ -501,14 +501,19 @@
       <div class="team-role">Desenvolvedora Back-end</div>
     </div>
     <div class="team-card">
-      <div class="team-avatar" style="background:#D4537E">LN</div>
-      <div class="team-name">Letícia Nunes</div>
-      <div class="team-role">Líder do Projeto</div>
+      <div class="team-avatar" style="background:#1D9E75">BG</div>
+      <div class="team-name">Breno Garcia</div>
+      <div class="team-role">Desenvolvedor Front-end</div>
     </div>
     <div class="team-card">
-      <div class="team-avatar" style="background:#534AB7">NC</div>
-      <div class="team-name">Nelson Capucho</div>
+      <div class="team-avatar" style="background:#534AB7">LF</div>
+      <div class="team-name">Luís Felipe</div>
       <div class="team-role">Analista de Dados</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar" style="background:#0284C7">JC</div>
+      <div class="team-name">Josué Carvalho</div>
+      <div class="team-role">Analista de Testes e Qualidade</div>
     </div>
   </div>
 </section>
@@ -551,13 +556,13 @@
       <form id="lp-form-login-motorista" onsubmit="realizarLoginMotoristaLP(event)">
         <div style="margin-bottom: 14px;">
           <label style="font-size: 12px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 6px;">E-mail do Motorista</label>
-          <input type="email" id="lp-motorista-email" required placeholder="seu@email.com" value="motorista@email.com" 
+          <input type="email" id="lp-motorista-email" required placeholder="seu@email.com" 
                  style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 14px; box-sizing: border-box; outline: none;">
         </div>
 
         <div style="margin-bottom: 18px;">
           <label style="font-size: 12px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 6px;">Senha</label>
-          <input type="password" id="lp-motorista-senha" required placeholder="••••••••" value="senha123" 
+          <input type="password" id="lp-motorista-senha" required placeholder="••••••••" 
                  style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 14px; box-sizing: border-box; outline: none;">
         </div>
 
@@ -569,18 +574,6 @@
           ✨ Ainda não tem conta? Criar cadastro
         </button>
       </form>
-
-      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1);">
-        <p style="font-size: 11px; color: #94A3B8; margin-bottom: 8px; font-weight: 600;">Contas cadastradas no MySQL:</p>
-        <button type="button" onclick="preencherLoginLP('motorista@email.com', 'senha123')" 
-                style="width: 100%; text-align: left; padding: 8px 12px; margin-bottom: 6px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: #0F172A; cursor: pointer; color: #CBD5E1;">
-          🚗 <strong>Motorista Demo EV</strong> (BYD Dolphin GS)
-        </button>
-        <button type="button" onclick="preencherLoginLP('gislaine.c.cesario@gmail.com', '1234')" 
-                style="width: 100%; text-align: left; padding: 8px 12px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: #0F172A; cursor: pointer; color: #CBD5E1;">
-          ⚡ <strong>Gislaine Cristina</strong>
-        </button>
-      </div>
     </div>
 
     <!-- PAINEL 2: CRIAR CADASTRO DO MOTORISTA -->
@@ -615,7 +608,7 @@
           </div>
           <div>
             <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">Telefone / WhatsApp *</label>
-            <input type="text" id="lp-cad-telefone" required placeholder="(15) 99887-6655" 
+            <input type="text" id="lp-cad-telefone" required placeholder="(00)00000-0000" 
                    style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;">
           </div>
         </div>
@@ -760,7 +753,7 @@
       if (response.ok) {
         const data = await response.json();
         sessionStorage.setItem('recarga_facil_motorista', JSON.stringify(data));
-        window.location.href = 'app.html';
+        window.location.href = 'app.html#perfil';
       } else {
         const err = await response.json();
         alert(err.error || 'Credenciais inválidas.');
@@ -804,7 +797,7 @@
         const data = await response.json();
         sessionStorage.setItem('recarga_facil_motorista', JSON.stringify(data));
         alert('Cadastro realizado com sucesso! Bem-vindo à plataforma Recarga Fácil.');
-        window.location.href = 'app.html';
+        window.location.href = 'app.html#perfil';
       } else {
         const err = await response.json();
         alert(err.error || 'Erro ao realizar cadastro.');

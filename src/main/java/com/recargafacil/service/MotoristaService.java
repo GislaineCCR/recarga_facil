@@ -93,4 +93,33 @@ public class MotoristaService {
     public Optional<Motorista> buscarPorId(Long id) {
         return motoristaRepository.findById(id);
     }
+
+    public Motorista atualizar(Long id, MotoristaDTO dto) {
+        Motorista motorista = motoristaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Motorista não encontrado com ID: " + id));
+
+        if (dto.getNome() != null && !dto.getNome().isBlank()) {
+            motorista.setNome(dto.getNome());
+            if (motorista.getUsuario() != null) {
+                motorista.getUsuario().setNome(dto.getNome());
+                usuarioRepository.save(motorista.getUsuario());
+            }
+        }
+        if (dto.getTelefone() != null && !dto.getTelefone().isBlank()) {
+            motorista.setTelefone(dto.getTelefone());
+        }
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+            motorista.setEmail(dto.getEmail());
+            if (motorista.getUsuario() != null) {
+                motorista.getUsuario().setEmail(dto.getEmail());
+                usuarioRepository.save(motorista.getUsuario());
+            }
+        }
+        if (dto.getSenha() != null && !dto.getSenha().isBlank() && motorista.getUsuario() != null) {
+            motorista.getUsuario().setSenha(dto.getSenha());
+            usuarioRepository.save(motorista.getUsuario());
+        }
+
+        return motoristaRepository.save(motorista);
+    }
 }

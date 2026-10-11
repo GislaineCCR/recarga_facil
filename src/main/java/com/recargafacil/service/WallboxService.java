@@ -35,6 +35,10 @@ public class WallboxService {
         local.setTipoAmbiente(dto.getTipoAmbiente());
         local.setInstrucoesAcesso(dto.getInstrucoesAcesso());
         local.setAcessoEnderecoAposPagamento(dto.getAcessoEnderecoAposPagamento() != null ? dto.getAcessoEnderecoAposPagamento() : true);
+        local.setPossuiVagaEstacionamento(dto.getPossuiVagaEstacionamento() != null ? dto.getPossuiVagaEstacionamento() : true);
+        local.setTipoVagaEstacionamento(dto.getTipoVagaEstacionamento());
+        local.setAutorizacaoCondominio(dto.getAutorizacaoCondominio() != null ? dto.getAutorizacaoCondominio() : true);
+        local.setDetalhesVaga(dto.getDetalhesVaga());
 
         Wallbox wallbox = new Wallbox();
         wallbox.setHost(host);
@@ -75,5 +79,12 @@ public class WallboxService {
 
     public Optional<Wallbox> buscarPorId(Long id) {
         return wallboxRepository.findById(id);
+    }
+
+    public Wallbox atualizarStatus(Long id, Wallbox.Status status) {
+        Wallbox wb = wallboxRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Wallbox não encontrada com ID: " + id));
+        wb.setStatus(status);
+        return wallboxRepository.save(wb);
     }
 }

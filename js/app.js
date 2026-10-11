@@ -71,6 +71,21 @@ async function initApp() {
 
   // Conexão com Back-end Java Spring Boot
   await loadWallboxData();
+
+  if (AppState.map) {
+    setTimeout(() => {
+      AppState.map.invalidateSize();
+      renderMapMarkers();
+    }, 150);
+    setTimeout(() => {
+      if (AppState.map) AppState.map.invalidateSize();
+    }, 500);
+  }
+
+  // Se a URL contiver hash #perfil, navega direto para o perfil do motorista
+  if (window.location.hash === '#perfil') {
+    navigateTo('screen-profile');
+  }
 }
 
 function loadSavedFavorites() {
@@ -217,6 +232,19 @@ function atualizarBannerMaisProxima() {
   }
 }
 
+function selecionarMaisProximaBanner() {
+  if (!AppState.wallboxesList || AppState.wallboxesList.length === 0) return;
+  const ordenada = [...AppState.wallboxesList].sort((a, b) => (a.distanceKm || 999) - (b.distanceKm || 999));
+  const maisProxima = ordenada[0];
+  if (maisProxima) {
+    AppState.selectedWallbox = maisProxima;
+    showBottomSheetPreview(maisProxima);
+    if (AppState.map) {
+      AppState.map.setView([maisProxima.lat, maisProxima.lng], 15);
+    }
+  }
+}
+
 /* ==========================================================================
    AUTENTICAÇÃO & SESSÃO DO MOTORISTA
    ========================================================================== */
@@ -283,8 +311,7 @@ async function realizarLoginMotorista(event) {
       atualizarBarraMotorista();
       fecharModalLoginMotorista();
       showToast(`Bem-vindo, ${motoristaData.nome}!`);
-      if (AppState.currentScreen === 'screen-profile') renderScreenProfile();
-      if (AppState.currentScreen === 'screen-bookings-list') renderScreenBookingsList();
+      navigateTo('screen-profile');
     } else {
       const err = await response.json();
       alert(err.error || 'Credenciais inválidas.');
@@ -333,8 +360,7 @@ async function realizarCadastroMotoristaApp(event) {
       atualizarBarraMotorista();
       fecharModalLoginMotorista();
       showToast(`Cadastro realizado! Bem-vindo, ${motoristaData.nome}!`);
-      if (AppState.currentScreen === 'screen-profile') renderScreenProfile();
-      if (AppState.currentScreen === 'screen-bookings-list') renderScreenBookingsList();
+      navigateTo('screen-profile');
     } else {
       const err = await response.json();
       alert(err.error || 'Erro ao realizar cadastro.');
@@ -548,24 +574,27 @@ function showBottomSheetPreview(wallbox) {
 
   bottomSheet.innerHTML = `
     <div class="preview-card-content">
-      <img src="${wallbox.photo}" alt="${wallbox.title}" class="preview-thumbnail">
+      <img src="${wallbox.photo}" alt="${wallbox.title}" class="preview-thumbnail" style="cursor: pointer;" onclick="navigateTo('screen-details')">
       <div class="preview-details">
-        <div>
+        <div style="cursor: pointer;" onclick="navigateTo('screen-details')">
           <div class="d-flex justify-between align-center mb-1">
             ${typeBadge}
             <span class="badge badge-power"><i class="ri-flashlight-line"></i> ${wallbox.power}</span>
           </div>
           <h3 class="preview-title">${wallbox.title}</h3>
-          <p class="text-muted" style="font-size: 12px;"><i class="ri-map-pin-2-line"></i> ${wallbox.distanceKm} km • ${wallbox.neighborhood}</p>
+          <p class="text-muted" style="font-size: 12px; margin-bottom: 2px;"><i class="ri-map-pin-2-line"></i> ${wallbox.distanceKm} km • ${wallbox.neighborhood}</p>
+          <div style="font-size: 11px; color: #059669; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+            <i class="ri-shield-keyhole-line"></i> Endereço exato liberado após pagamento
+          </div>
         </div>
         <div class="d-flex justify-between align-center mt-2" style="gap: 8px;">
           <div class="preview-price">R$ ${wallbox.pricePerHour.toFixed(2).replace('.', ',')}<small>/h</small></div>
           <div style="display: flex; gap: 6px;">
-            <a href="https://www.google.com/maps/dir/?api=1&destination=${wallbox.lat},${wallbox.lng}" target="_blank" class="btn btn-secondary" style="padding: 6px 10px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; border-radius: 8px;" title="Abrir rota no Google Maps">
-              <i class="ri-map-pin-2-fill" style="color: #EA4335;"></i> Google Maps
-            </a>
-            <button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;" onclick="navigateTo('screen-details')">
-              Ver Detalhes <i class="ri-arrow-right-line"></i>
+            <button class="btn btn-secondary" style="padding: 7px 12px; font-size: 12px; font-weight: 600;" onclick="navigateTo('screen-details')" title="Ver Detalhes do Ponto">
+              <i class="ri-information-line"></i> Detalhes
+            </button>
+            <button class="btn btn-primary" style="padding: 7px 14px; font-size: 12px; font-weight: 700;" onclick="iniciarAgendamentoWallbox('${wallbox.id}')">
+              <i class="ri-calendar-check-line"></i> Fazer Agendamento
             </button>
           </div>
         </div>
@@ -574,6 +603,32 @@ function showBottomSheetPreview(wallbox) {
   `;
 
   bottomSheet.classList.add('show');
+}
+
+function iniciarAgendamentoWallbox(wallboxId) {
+  const wb = AppState.wallboxesList && AppState.wallboxesList.find(w => w.id === wallboxId);
+  if (wb) {
+    AppState.selectedWallbox = wb;
+  }
+  navigateTo('screen-booking');
+}
+
+function filtrarPorMaisProximo(event) {
+  if (event) {
+    document.querySelectorAll('.filter-chip[data-type]').forEach(c => c.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+  }
+  if (!AppState.wallboxesList || AppState.wallboxesList.length === 0) return;
+  const ordenada = [...AppState.wallboxesList].sort((a, b) => (a.distanceKm || 999) - (b.distanceKm || 999));
+  const maisProxima = ordenada[0];
+  if (maisProxima) {
+    AppState.selectedWallbox = maisProxima;
+    if (AppState.map) {
+      AppState.map.setView([maisProxima.lat, maisProxima.lng], 15);
+    }
+    showBottomSheetPreview(maisProxima);
+    showToast(`Ponto mais próximo: ${maisProxima.title} (${maisProxima.distanceKm} km)`);
+  }
 }
 
 /* ==========================================================================
@@ -652,6 +707,21 @@ function navigateTo(targetScreenId) {
   AppState.currentScreen = targetScreenId;
 
   // Renderiza telas dinâmicas
+  if (targetScreenId === 'screen-search') {
+    if (AppState.map) {
+      setTimeout(() => {
+        AppState.map.invalidateSize();
+        if (AppState.userLocation) {
+          AppState.map.setView([AppState.userLocation.lat, AppState.userLocation.lng]);
+        }
+        renderMapMarkers();
+        renderUserLocationMarker(AppState.userLocation.lat, AppState.userLocation.lng);
+      }, 50);
+      setTimeout(() => {
+        if (AppState.map) AppState.map.invalidateSize();
+      }, 250);
+    }
+  }
   if (targetScreenId === 'screen-details') renderScreenDetails();
   if (targetScreenId === 'screen-booking') renderScreenBooking();
   if (targetScreenId === 'screen-checkout') renderScreenCheckout();
@@ -964,25 +1034,34 @@ async function renderScreenProfile() {
       </div>
     ` : `
       <div class="card mb-3 text-center" style="padding: 16px;">
-        <p style="font-size: 13px; color: var(--text-muted);">Nenhum veículo vinculado a este motorista no banco de dados.</p>
-        <button class="btn btn-outline-primary mt-2" style="font-size: 12px; padding: 6px 14px;" onclick="window.open('admin.html', '_blank')">
-          <i class="ri-add-line"></i> Cadastrar Veículo no Painel Admin
-        </button>
+        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Nenhum veículo vinculado a este motorista no momento.</p>
       </div>
     `;
 
+    const prefPayment = sessionStorage.getItem('recarga_facil_preferred_payment') || 'Pix Instantâneo';
+    const fotoSalva = sessionStorage.getItem('recarga_facil_motorista_foto') || 
+                      (AppState.currentMotorista && AppState.currentMotorista.fotoUrl) ||
+                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&h=160&q=80';
+
     container.innerHTML = `
       <div class="screen-scroll-body" style="padding: 16px 16px calc(var(--bottom-nav-height) + 20px) 16px;">
-        <!-- Card do Usuário (Do MySQL) -->
+        <!-- Card do Usuário -->
         <div class="profile-hero-card">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&h=160&q=80" alt="Avatar" class="profile-avatar-large">
+          <div class="profile-avatar-wrapper" onclick="abrirModalFotoPerfil()" title="Clique para cadastrar ou alterar foto de perfil">
+            <img src="${fotoSalva}" alt="Avatar" class="profile-avatar-large" id="profile-avatar-img">
+            <div class="avatar-edit-badge" title="Cadastrar / Alterar foto">
+              <i class="ri-camera-fill"></i>
+            </div>
+          </div>
           <div>
             <h2 style="font-size: 17px; font-weight: 800;">${motorista.nome}</h2>
             <p style="font-size: 12px; color: #94A3B8;">${motorista.email}</p>
             <p style="font-size: 11px; color: #94A3B8; margin-top: 2px;">Tel: ${motorista.telefone || 'N/A'} • CPF: ${motorista.cpf || 'N/A'}</p>
-            <span class="badge badge-verified mt-2" style="background: rgba(0, 208, 132, 0.2); color: #00D084;">
-              <i class="ri-database-2-line"></i> Conectado ao MySQL (ID #${motorista.id})
-            </span>
+            <div style="margin-top: 5px;">
+              <span style="font-size: 11px; color: var(--primary); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;" onclick="abrirModalFotoPerfil()">
+                <i class="ri-image-edit-line"></i> Alterar foto de perfil
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1011,30 +1090,30 @@ async function renderScreenProfile() {
 
         <!-- Menu de Opções -->
         <div class="profile-menu-list mb-3">
-          <div class="profile-menu-item" onclick="alternarMotoristaBanco()">
+          <div class="profile-menu-item" onclick="abrirModalAtualizarCadastro()">
             <div class="menu-left">
-              <div class="menu-icon" style="background: #EEF2FF; color: #4F46E5;"><i class="ri-user-switch-line"></i></div>
-              <span>Alternar Motorista do Banco</span>
+              <div class="menu-icon" style="color: #0284C7; background: #E0F2FE;"><i class="ri-user-settings-line"></i></div>
+              <div>
+                <span style="display: block; font-weight: 700;">Atualizar Cadastro</span>
+                <span style="display: block; font-size: 11px; color: #94A3B8;">Telefone, WhatsApp e Forma de Pagamento</span>
+              </div>
             </div>
             <i class="ri-arrow-right-s-line text-muted"></i>
           </div>
-          <div class="profile-menu-item" onclick="window.open('admin.html', '_blank')">
-            <div class="menu-left">
-              <div class="menu-icon" style="color: #F59E0B; background: #FEF3C7;"><i class="ri-settings-4-line"></i></div>
-              <span>Abrir Painel Administrativo</span>
-            </div>
-            <i class="ri-arrow-right-s-line text-muted"></i>
-          </div>
-          <div class="profile-menu-item" onclick="showToast('Cartão Mastercard final 8821 ativo')">
+          <div class="profile-menu-item" onclick="abrirModalAtualizarCadastro('pagamento')">
             <div class="menu-left">
               <div class="menu-icon"><i class="ri-bank-card-line"></i></div>
-              <span>Formas de Pagamento (Pix / Cartão)</span>
+              <span>Formas de Pagamento (${prefPayment})</span>
             </div>
             <i class="ri-arrow-right-s-line text-muted"></i>
           </div>
           <div class="profile-menu-item" onclick="showToast('Notificações push ativadas')">
             <div class="menu-left">
               <div class="menu-icon"><i class="ri-notification-3-line"></i></div>
+              <span>Notificações</span>
+            </div>
+            <i class="ri-arrow-right-s-line text-muted"></i>
+          </div>
           <div class="profile-menu-item" onclick="fazerLogoutMotorista()">
             <div class="menu-left">
               <div class="menu-icon" style="color: #EF4444; background: #FEE2E2;"><i class="ri-logout-box-r-line"></i></div>
@@ -1049,6 +1128,199 @@ async function renderScreenProfile() {
     console.error("Erro ao renderizar tela de perfil:", err);
   }
 }
+
+window.abrirModalAtualizarCadastro = function(aba = 'geral') {
+  const modal = document.getElementById('modal-atualizar-cadastro');
+  if (!modal) return;
+
+  const motorista = AppState.currentMotorista || {};
+  const nomeInput = document.getElementById('edit-motorista-nome');
+  const telInput = document.getElementById('edit-motorista-telefone');
+  const cpfInput = document.getElementById('edit-motorista-cpf');
+  const emailInput = document.getElementById('edit-motorista-email');
+  const senhaInput = document.getElementById('edit-motorista-senha');
+
+  if (nomeInput) nomeInput.value = motorista.nome || '';
+  if (telInput) telInput.value = motorista.telefone || '(11) 99269-6670';
+  if (cpfInput) cpfInput.value = motorista.cpf || '36316445822';
+  if (emailInput) emailInput.value = motorista.email || '';
+  if (senhaInput) senhaInput.value = '';
+
+  const savedPayment = sessionStorage.getItem('recarga_facil_preferred_payment') || 'Pix Instantâneo';
+  const radioPix = document.getElementById('radio-pag-pix');
+  const radioCard = document.getElementById('radio-pag-card');
+  const cardFinal = document.getElementById('edit-card-final');
+
+  if (savedPayment.includes('Cartão') || savedPayment.includes('Card') || aba === 'pagamento') {
+    if (radioCard) radioCard.checked = true;
+    if (cardFinal) cardFinal.value = sessionStorage.getItem('recarga_facil_card_label') || 'Mastercard final 8821';
+  } else {
+    if (radioPix) radioPix.checked = true;
+  }
+  toggleEditPaymentFields();
+
+  modal.style.display = 'flex';
+};
+
+window.fecharModalAtualizarCadastro = function() {
+  const modal = document.getElementById('modal-atualizar-cadastro');
+  if (modal) modal.style.display = 'none';
+};
+
+window.toggleEditPaymentFields = function() {
+  const radioCard = document.getElementById('radio-pag-card');
+  const cardFields = document.getElementById('edit-card-fields');
+  if (cardFields) {
+    cardFields.style.display = (radioCard && radioCard.checked) ? 'block' : 'none';
+  }
+};
+
+window.salvarAtualizacaoCadastroMotorista = async function(event) {
+  event.preventDefault();
+  const motorista = AppState.currentMotorista;
+  if (!motorista || !motorista.id) {
+    showToast("Erro: motorista não autenticado.");
+    return;
+  }
+
+  const nome = document.getElementById('edit-motorista-nome').value.trim();
+  const telefone = document.getElementById('edit-motorista-telefone').value.trim();
+  const email = document.getElementById('edit-motorista-email').value.trim();
+  const senha = document.getElementById('edit-motorista-senha').value.trim();
+  const radioCard = document.getElementById('radio-pag-card');
+  const cardFinal = document.getElementById('edit-card-final');
+
+  let paymentLabel = 'Pix Instantâneo';
+  if (radioCard && radioCard.checked) {
+    paymentLabel = cardFinal && cardFinal.value.trim() ? cardFinal.value.trim() : 'Cartão de Crédito';
+    sessionStorage.setItem('recarga_facil_card_label', paymentLabel);
+    AppState.booking.paymentMethod = 'card';
+  } else {
+    AppState.booking.paymentMethod = 'pix';
+  }
+  sessionStorage.setItem('recarga_facil_preferred_payment', paymentLabel);
+
+  const btn = document.getElementById('btn-save-motorista-edit');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Salvando...';
+  }
+
+  try {
+    const dto = {
+      nome: nome || motorista.nome,
+      telefone: telefone || motorista.telefone,
+      email: email || motorista.email,
+      cpf: motorista.cpf
+    };
+    if (senha) dto.senha = senha;
+
+    const atualizado = await ApiService.updateMotorista(motorista.id, dto);
+    if (atualizado) {
+      AppState.currentMotorista = { ...AppState.currentMotorista, ...atualizado };
+    } else {
+      AppState.currentMotorista = { ...AppState.currentMotorista, nome, telefone, email };
+    }
+
+    sessionStorage.setItem('recarga_facil_motorista', JSON.stringify(AppState.currentMotorista));
+    atualizarBarraMotorista();
+    fecharModalAtualizarCadastro();
+    showToast("Cadastro atualizado com sucesso!");
+    renderScreenProfile();
+  } catch (err) {
+    console.error("Erro ao salvar atualização de motorista:", err);
+    showToast("Erro ao salvar alterações no servidor.");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ri-check-line"></i> Salvar Alterações';
+    }
+  }
+};
+
+/* ==========================================================================
+   GERENCIAMENTO DE FOTO DE PERFIL DO MOTORISTA
+   ========================================================================== */
+const AVATAR_PRESETS = [
+  { id: 'av1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&h=160&q=80', label: 'Foto Atual' },
+  { id: 'av2', url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=160&h=160&q=80', label: 'Executiva' },
+  { id: 'av3', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&h=160&q=80', label: 'Condutor' },
+  { id: 'av4', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&h=160&q=80', label: 'Jovem EV' },
+  { id: 'av5', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=160&h=160&q=80', label: 'Avatar Tech' },
+  { id: 'av6', url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=160&h=160&q=80', label: 'Avatar Minimalista' }
+];
+
+window.abrirModalFotoPerfil = function() {
+  const modal = document.getElementById('modal-foto-perfil');
+  if (!modal) return;
+
+  const fotoAtual = sessionStorage.getItem('recarga_facil_motorista_foto') || 
+                    (AppState.currentMotorista && AppState.currentMotorista.fotoUrl) ||
+                    AVATAR_PRESETS[0].url;
+
+  const previewEl = document.getElementById('modal-avatar-preview');
+  if (previewEl) previewEl.src = fotoAtual;
+
+  const container = document.getElementById('avatar-presets-container');
+  if (container) {
+    container.innerHTML = AVATAR_PRESETS.map(av => `
+      <img src="${av.url}" alt="${av.label}" class="avatar-preset-item ${av.url === fotoAtual ? 'active' : ''}" 
+           onclick="selecionarPresetFotoPerfil('${av.url}')" title="${av.label}">
+    `).join('');
+  }
+
+  modal.style.display = 'flex';
+};
+
+window.fecharModalFotoPerfil = function() {
+  const modal = document.getElementById('modal-foto-perfil');
+  if (modal) modal.style.display = 'none';
+};
+
+window.selecionarPresetFotoPerfil = function(url) {
+  atualizarFotoPerfil(url);
+};
+
+window.handleFotoUploadChange = function(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Por favor, selecione uma imagem com menos de 5MB.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    atualizarFotoPerfil(dataUrl);
+  };
+  reader.readAsDataURL(file);
+};
+
+window.atualizarFotoPerfil = function(url) {
+  sessionStorage.setItem('recarga_facil_motorista_foto', url);
+  if (AppState.currentMotorista) {
+    AppState.currentMotorista.fotoUrl = url;
+    sessionStorage.setItem('recarga_facil_motorista', JSON.stringify(AppState.currentMotorista));
+  }
+
+  const previewEl = document.getElementById('modal-avatar-preview');
+  if (previewEl) previewEl.src = url;
+
+  const avatarImg = document.getElementById('profile-avatar-img');
+  if (avatarImg) avatarImg.src = url;
+
+  document.querySelectorAll('.avatar-preset-item').forEach(el => {
+    if (el.src === url) {
+      el.classList.add('active');
+    } else {
+      el.classList.remove('active');
+    }
+  });
+
+  showToast("Foto de perfil atualizada com sucesso!");
+};
 
 async function alternarMotoristaBanco() {
   try {
@@ -1075,6 +1347,7 @@ async function alternarMotoristaBanco() {
 function renderScreenDetails() {
   const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
   if (!wb) return;
+  const container = document.getElementById('details-content-placeholder');
   if (!container) return;
 
   const isRes = wb.type === 'residencial';
@@ -1172,11 +1445,13 @@ function renderScreenDetails() {
         </div>
 
         <!-- Regra de Segurança: Endereço Mascarado -->
-        <div class="security-alert-box">
-          <i class="ri-shield-keyhole-line"></i>
+        <div class="security-alert-box" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 14px; margin: 16px 0; display: flex; gap: 12px; align-items: flex-start;">
+          <i class="ri-shield-keyhole-fill" style="font-size: 24px; color: #059669; flex-shrink: 0; margin-top: 2px;"></i>
           <div class="alert-text">
-            <strong>Privacidade e Segurança do Anfitrião:</strong><br>
-            O número exato da residência, código de portão e interfone serão revelados imediatamente após a confirmação do pagamento.
+            <strong style="color: #065F46; font-size: 13px; display: block; margin-bottom: 2px;">Regra de Segurança e Privacidade do Anfitrião:</strong>
+            <span style="font-size: 12px; color: #047857; line-height: 1.45; display: block;">
+              Por segurança e privacidade, o endereço completo (rua, número e complemento) e as instruções de acesso ao imóvel/vaga só são <strong>desbloqueados após a confirmação do pagamento</strong> da reserva.
+            </span>
           </div>
         </div>
       </div>
@@ -1189,72 +1464,16 @@ function renderScreenDetails() {
         <div class="price-label">Cancelamento grátis até 1h antes</div>
       </div>
       <button class="btn btn-primary" onclick="navigateTo('screen-booking')">
-        <i class="ri-calendar-check-line"></i> Agendar Recarga
+        <i class="ri-calendar-check-line"></i> Fazer Agendamento
       </button>
     </div>
   `;
 }
 
-// Funções auxiliares para cálculo dinâmico de janelas de horário
-function getWallboxStartTimes(wb) {
-  if (wb && wb.availableStartTimes && wb.availableStartTimes.length > 0) {
-    return wb.availableStartTimes;
-  }
-  if (wb && wb.availableSlots && wb.availableSlots.length > 0) {
-    return wb.availableSlots.map(slot => {
-      // Extrai o horário inicial da string (ex: "08:00 - 10:00" -> "08:00")
-      return slot.split('-')[0].trim();
-    });
-  }
-  return ["08:00", "10:00", "13:00", "15:00", "18:00"];
-}
-
-function formatSlotRange(startTimeStr, durationHours) {
-  if (!startTimeStr) startTimeStr = "08:00";
-  const parts = startTimeStr.split(':');
-  const startH = parseInt(parts[0], 10) || 0;
-  const startM = parseInt(parts[1] || '0', 10) || 0;
-  
-  const endH = startH + durationHours;
-  const startFormatted = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
-  const endFormatted = `${String(endH % 24).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
-  
-  return `${startFormatted} - ${endFormatted}`;
-}
-
-function renderTimeSlots() {
-  const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
-  if (!wb) return;
-  if (!gridContainer) return;
-
-  const duration = AppState.booking.durationHours || 2;
-  const startTimes = getWallboxStartTimes(wb);
-
-  // Mantém ou inicializa o horário de início selecionado
-  let currentStart = AppState.booking.selectedStartTime;
-  if (!currentStart && AppState.booking.timeSlot) {
-    currentStart = AppState.booking.timeSlot.split('-')[0].trim();
-  }
-  if (!currentStart || !startTimes.includes(currentStart)) {
-    currentStart = startTimes[0] || "08:00";
-  }
-
-  AppState.booking.selectedStartTime = currentStart;
-  AppState.booking.timeSlot = formatSlotRange(currentStart, duration);
-
-  gridContainer.innerHTML = startTimes.map((startTime) => {
-    const slotLabel = formatSlotRange(startTime, duration);
-    const isSelected = startTime === currentStart;
-    return `
-      <button class="time-slot-btn ${isSelected ? 'selected' : ''}" onclick="selectTimeSlot('${slotLabel}', '${startTime}', this)">
-        <i class="ri-time-line"></i> ${slotLabel}
-      </button>
-    `;
-  }).join('');
-}
-
-// Tela 3: Agendamento de Horário
-function renderScreenBooking() {
+// ==========================================================================
+// 3. TELA DE AGENDAMENTO (INTEGRADA COM AGENDA: diaSemana, horarioInicio, horarioFim, estaAtivo)
+// ==========================================================================
+async function renderScreenBooking() {
   const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
   if (!wb) return;
   const container = document.getElementById('booking-content-placeholder');
@@ -1270,7 +1489,109 @@ function renderScreenBooking() {
   container.innerHTML = `
     <div class="screen-header-nav">
       <button class="btn-icon" onclick="goBack()"><i class="ri-arrow-left-line"></i></button>
-      <span class="header-title">Agendar Sessão</span>
+      <span class="header-title">Fazer Agendamento</span>
+      <div style="width: 40px;"></div>
+    </div>
+    <div class="screen-scroll-body" style="padding: 40px 16px; text-align: center;">
+      <i class="ri-loader-4-line ri-spin" style="font-size: 32px; color: var(--primary);"></i>
+      <p style="margin-top: 12px; color: var(--text-muted); font-size: 13px;">Consultando horários e disponibilidade da agenda...</p>
+    </div>
+  `;
+
+  // Consulta agendas no banco de dados Java Spring Boot
+  const agendas = await ApiService.getAgendasByWallbox(wb.backendId || 1);
+  AppState.currentWallboxAgendas = agendas || [];
+
+  const DIAS_CONFIG = [
+    { codigo: 'DOMINGO', nome: 'Domingo', abrev: 'Dom' },
+    { codigo: 'SEGUNDA', nome: 'Segunda-feira', abrev: 'Seg' },
+    { codigo: 'TERCA',   nome: 'Terça-feira', abrev: 'Ter' },
+    { codigo: 'QUARTA',  nome: 'Quarta-feira', abrev: 'Qua' },
+    { codigo: 'QUINTA',  nome: 'Quinta-feira', abrev: 'Qui' },
+    { codigo: 'SEXTA',   nome: 'Sexta-feira', abrev: 'Sex' },
+    { codigo: 'SABADO',  nome: 'Sábado', abrev: 'Sáb' }
+  ];
+
+  // Gera os próximos 7 dias a partir de hoje
+  const hoje = new Date();
+  const diasSemanaList = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(hoje);
+    d.setDate(hoje.getDate() + i);
+    const dayIndex = d.getDay();
+    const conf = DIAS_CONFIG[dayIndex];
+
+    const agendaBD = (agendas || []).find(a => a.diaSemana === conf.codigo);
+    const estaAtivo = agendaBD ? (agendaBD.estaAtivo === true || agendaBD.estaAtivo === 1) : false;
+    const inicioStr = agendaBD && agendaBD.horarioInicio ? agendaBD.horarioInicio.substring(0, 5) : '08:00';
+    const fimStr = agendaBD && agendaBD.horarioFim ? agendaBD.horarioFim.substring(0, 5) : '20:00';
+
+    const isoDate = d.toISOString().split('T')[0];
+    const rotuloPrincipal = i === 0 ? 'Hoje' : (i === 1 ? 'Amanhã' : conf.abrev);
+    const dataDisplay = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    diasSemanaList.push({
+      index: i,
+      isoDate: isoDate,
+      rotuloPrincipal: rotuloPrincipal,
+      nomeCompleto: conf.nome,
+      dataDisplay: dataDisplay,
+      codigoEnum: conf.codigo,
+      estaAtivo: estaAtivo,
+      horarioInicio: inicioStr,
+      horarioFim: fimStr
+    });
+  }
+
+  AppState.diasSemanaDisponiveis = diasSemanaList;
+
+  // Seleciona o primeiro dia ativo, ou o índice 0
+  if (AppState.booking.selectedDayIndex === undefined || AppState.booking.selectedDayIndex === null) {
+    const primeiroAtivoIndex = diasSemanaList.findIndex(d => d.estaAtivo);
+    AppState.booking.selectedDayIndex = primeiroAtivoIndex !== -1 ? primeiroAtivoIndex : 0;
+  }
+
+  const diaSelecionado = diasSemanaList[AppState.booking.selectedDayIndex] || diasSemanaList[0];
+  AppState.booking.date = `${diaSelecionado.rotuloPrincipal}, ${diaSelecionado.dataDisplay}`;
+  AppState.booking.selectedDateIso = diaSelecionado.isoDate;
+  AppState.booking.currentDayAgenda = diaSelecionado;
+
+  renderScreenBookingContent(wb);
+}
+
+function renderScreenBookingContent(wb) {
+  const container = document.getElementById('booking-content-placeholder');
+  if (!container) return;
+
+  const diasSemanaList = AppState.diasSemanaDisponiveis || [];
+  const selectedIndex = AppState.booking.selectedDayIndex || 0;
+  const diaSelecionado = diasSemanaList[selectedIndex] || diasSemanaList[0];
+
+  const datePillsHtml = diasSemanaList.map((d, idx) => {
+    const isSelected = idx === selectedIndex;
+    const statusDot = d.estaAtivo 
+      ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10B981;"></span>`
+      : `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#EF4444;"></span>`;
+    
+    return `
+      <div class="date-pill ${isSelected ? 'selected' : ''}" 
+           style="cursor: ${d.estaAtivo ? 'pointer' : 'not-allowed'}; opacity: ${d.estaAtivo ? '1' : '0.45'}; min-width: 78px; flex-shrink: 0; text-align: center;"
+           onclick="selectBookingDayFromAgenda(${idx})">
+        <div class="day-name" style="display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px;">
+          ${statusDot} ${d.rotuloPrincipal}
+        </div>
+        <div class="day-num" style="font-size: 14px; font-weight: 800;">${d.dataDisplay}</div>
+        <div style="font-size: 10px; margin-top: 2px; color: ${d.estaAtivo ? '#059669' : '#EF4444'}; font-weight: 700;">
+          ${d.estaAtivo ? `${d.horarioInicio}` : 'Inativo'}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="screen-header-nav">
+      <button class="btn-icon" onclick="goBack()"><i class="ri-arrow-left-line"></i></button>
+      <span class="header-title">Fazer Agendamento</span>
       <div style="width: 40px;"></div>
     </div>
 
@@ -1278,32 +1599,53 @@ function renderScreenBooking() {
       <!-- Resumo do Ponto Selecionado -->
       <div class="card mb-3 d-flex gap-3 align-center">
         <img src="${wb.photo}" style="width: 60px; height: 60px; border-radius: var(--radius-md); object-fit: cover;">
-        <div>
-          <h4 style="font-size: 14px; font-weight: 700;">${wb.title}</h4>
+        <div style="flex: 1;">
+          <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 2px;">${wb.title}</h4>
           <div style="font-size: 12px; color: var(--text-muted);">${wb.power} • R$ ${wb.pricePerHour.toFixed(2).replace('.', ',')}/h</div>
+          <div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 2px;">
+            <i class="ri-map-pin-2-fill"></i> ${wb.neighborhood}, ${wb.city}
+          </div>
         </div>
       </div>
 
-      <!-- Seletor de Data -->
+      <!-- REGRA DE NEGÓCIO DE SEGURANÇA: ENDEREÇO PROTEGIDO -->
+      <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; display: flex; gap: 10px; align-items: center;">
+        <i class="ri-shield-keyhole-fill" style="font-size: 22px; color: #059669; flex-shrink: 0;"></i>
+        <div style="font-size: 12px; color: #065F46; line-height: 1.4;">
+          <strong>Regra de Segurança:</strong> O endereço completo (rua, número) e as instruções de acesso ao ponto de recarga só serão <strong>liberados após a confirmação do pagamento</strong> por segurança do anfitrião.
+        </div>
+      </div>
+
+      <!-- 1. SELETOR DE DATA / DIA DA SEMANA -->
       <div class="booking-section-card">
-        <div class="section-label"><i class="ri-calendar-event-line text-primary"></i> 1. Escolha a Data</div>
-        <div class="date-selector-row">
-          <div class="date-pill selected" onclick="selectBookingDate('Hoje, 26 Ago', this)">
-            <div class="day-name">Hoje</div>
-            <div class="day-num">26 Ago</div>
-          </div>
-          <div class="date-pill" onclick="selectBookingDate('Amanhã, 27 Ago', this)">
-            <div class="day-name">Amanhã</div>
-            <div class="day-num">27 Ago</div>
-          </div>
-          <div class="date-pill" onclick="selectBookingDate('Sexta, 28 Ago', this)">
-            <div class="day-name">Sexta</div>
-            <div class="day-num">28 Ago</div>
-          </div>
+        <div class="section-label">
+          <i class="ri-calendar-event-line text-primary"></i> 1. Escolha a Data da Recarga
+        </div>
+        <div class="date-selector-row" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;">
+          ${datePillsHtml}
         </div>
       </div>
 
-      <!-- Duração da Recarga -->
+      <!-- STATUS DA AGENDA DA ESTAÇÃO PARA O DIA SELECIONADO -->
+      <div style="background: ${diaSelecionado.estaAtivo ? '#F0FDF4' : '#FEF2F2'}; border: 1px solid ${diaSelecionado.estaAtivo ? '#BBF7D0' : '#FECACA'}; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: ${diaSelecionado.estaAtivo ? '#166534' : '#991B1B'}; text-transform: uppercase;">
+              <i class="ri-calendar-check-line"></i> Agenda: ${diaSelecionado.nomeCompleto} (${diaSelecionado.codigoEnum})
+            </div>
+            <div style="font-size: 13px; font-weight: 700; color: #1E293B; margin-top: 3px;">
+              ${diaSelecionado.estaAtivo 
+                ? `Horário de Funcionamento: <span style="color: #059669;">${diaSelecionado.horarioInicio} às ${diaSelecionado.horarioFim}</span>`
+                : `<span style="color: #DC2626;">Esta estação não aceita agendamentos neste dia da semana.</span>`}
+            </div>
+          </div>
+          <span style="padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 800; background: ${diaSelecionado.estaAtivo ? '#DCFCE7' : '#FEE2E2'}; color: ${diaSelecionado.estaAtivo ? '#15803D' : '#B91C1C'};">
+            ${diaSelecionado.estaAtivo ? '🟢 Aberto' : '🔴 Inativo'}
+          </span>
+        </div>
+      </div>
+
+      <!-- 2. DURAÇÃO DA RECARGA -->
       <div class="booking-section-card">
         <div class="section-label"><i class="ri-time-line text-primary"></i> 2. Tempo de Recarga Desejado</div>
         <div class="duration-selector-row">
@@ -1314,15 +1656,15 @@ function renderScreenBooking() {
         </div>
       </div>
 
-      <!-- Grade de Janelas de Horário -->
+      <!-- 3. GRADE DE HORÁRIOS DENTRO DO INTERVALO DA AGENDA -->
       <div class="booking-section-card">
-        <div class="section-label"><i class="ri-sun-cloudy-line text-primary"></i> 3. Selecione o Horário de Chegada</div>
+        <div class="section-label"><i class="ri-sun-cloudy-line text-primary"></i> 3. Selecione o Horário de Início</div>
         <div class="time-slots-grid" id="booking-time-slots-grid">
-          <!-- Gerado dinamicamente com base nas horas selecionadas -->
+          <!-- Renderizado dinamicamente -->
         </div>
       </div>
 
-      <!-- Estimativa em Tempo Real -->
+      <!-- Estimativa de Valores em Tempo Real -->
       <div class="card" style="background: var(--primary-light); border-color: var(--primary);">
         <div class="d-flex justify-between align-center">
           <div>
@@ -1338,38 +1680,97 @@ function renderScreenBooking() {
       </div>
     </div>
 
-    <!-- Barra Fixa Inferior de Checkout (Sempre Ancorada no Rodapé) -->
+    <!-- Barra Fixa Inferior de Checkout -->
     <div class="sticky-bottom-action-bar">
       <div class="action-price-preview">
         <div id="booking-action-total" class="price-amount">R$ ${AppState.booking.total.toFixed(2).replace('.', ',')}</div>
         <div class="price-label">Inclui taxa de 25% da plataforma</div>
       </div>
-      <button class="btn btn-primary" onclick="handleConfirmBooking()">
+      <button class="btn btn-primary" id="btn-booking-submit" ${!diaSelecionado.estaAtivo ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} onclick="handleConfirmBooking()">
         Ir para Pagamento <i class="ri-arrow-right-line"></i>
       </button>
     </div>
   `;
 
-  renderTimeSlots();
+  renderAgendaTimeSlots(diaSelecionado);
 }
 
-async function handleConfirmBooking() {
-  if (AppState.currentMotorista) {
-    AppState.booking.motoristaId = AppState.currentMotorista.id;
-  } else {
-    AppState.booking.motoristaId = AppState.currentMotoristaId || 1;
+function selectBookingDayFromAgenda(dayIndex) {
+  const diasSemanaList = AppState.diasSemanaDisponiveis || [];
+  const dia = diasSemanaList[dayIndex];
+  if (!dia) return;
+
+  if (!dia.estaAtivo) {
+    showToast(`Estação inativa em ${dia.nomeCompleto}. Por favor, escolha um dia ativo.`);
+    return;
   }
-  const reservaResult = await ApiService.createReserva(AppState.booking);
-  if (reservaResult && reservaResult.id) {
-    AppState.booking.reservaId = reservaResult.id;
-  }
-  navigateTo('screen-checkout');
+
+  AppState.booking.selectedDayIndex = dayIndex;
+  AppState.booking.date = `${dia.rotuloPrincipal}, ${dia.dataDisplay}`;
+  AppState.booking.selectedDateIso = dia.isoDate;
+  AppState.booking.currentDayAgenda = dia;
+
+  const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
+  renderScreenBookingContent(wb);
 }
 
-function selectBookingDate(dateText, element) {
-  AppState.booking.date = dateText;
-  document.querySelectorAll('.date-pill').forEach(el => el.classList.remove('selected'));
-  element.classList.add('selected');
+function renderAgendaTimeSlots(diaSelecionado) {
+  const gridContainer = document.getElementById('booking-time-slots-grid');
+  if (!gridContainer) return;
+
+  if (!diaSelecionado || !diaSelecionado.estaAtivo) {
+    gridContainer.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 16px; text-align: center; color: #991B1B; background: #FEF2F2; border-radius: 10px; font-size: 13px;">
+        <i class="ri-error-warning-line"></i> Esta estação está inativa neste dia da semana. Selecione outro dia com horário ativo.
+      </div>
+    `;
+    return;
+  }
+
+  const duration = AppState.booking.durationHours || 2;
+  const startParts = (diaSelecionado.horarioInicio || '08:00').split(':');
+  const endParts = (diaSelecionado.horarioFim || '20:00').split(':');
+
+  const startH = parseInt(startParts[0], 10);
+  const startM = parseInt(startParts[1] || '0', 10);
+  const endH = parseInt(endParts[0], 10);
+
+  const slots = [];
+  for (let h = startH; h <= endH - duration; h += (duration <= 2 ? 1 : 2)) {
+    const sFormatted = `${String(h).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
+    const eH = h + duration;
+    const eFormatted = `${String(eH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
+    slots.push({
+      startTime: sFormatted,
+      label: `${sFormatted} - ${eFormatted}`
+    });
+  }
+
+  if (slots.length === 0) {
+    gridContainer.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 14px; text-align: center; color: #92400E; background: #FEF3C7; border-radius: 10px; font-size: 13px;">
+        <i class="ri-time-line"></i> A duração (${duration}h) excede o horário de funcionamento deste dia (${diaSelecionado.horarioInicio} às ${diaSelecionado.horarioFim}). Tente reduzir para 1h.
+      </div>
+    `;
+    return;
+  }
+
+  let currentStart = AppState.booking.selectedStartTime;
+  if (!currentStart || !slots.some(s => s.startTime === currentStart)) {
+    currentStart = slots[0].startTime;
+  }
+  AppState.booking.selectedStartTime = currentStart;
+  const currentSlot = slots.find(s => s.startTime === currentStart) || slots[0];
+  AppState.booking.timeSlot = currentSlot.label;
+
+  gridContainer.innerHTML = slots.map(slot => {
+    const isSelected = slot.startTime === currentStart;
+    return `
+      <button class="time-slot-btn ${isSelected ? 'selected' : ''}" onclick="selectTimeSlot('${slot.label}', '${slot.startTime}', this)">
+        <i class="ri-time-line"></i> ${slot.label}
+      </button>
+    `;
+  }).join('');
 }
 
 function selectBookingDuration(hours, element) {
@@ -1379,7 +1780,10 @@ function selectBookingDuration(hours, element) {
     element.classList.add('selected');
   }
   updateBookingCalculations();
-  renderTimeSlots();
+  const diasSemanaList = AppState.diasSemanaDisponiveis || [];
+  const selectedIndex = AppState.booking.selectedDayIndex || 0;
+  const diaSelecionado = diasSemanaList[selectedIndex];
+  renderAgendaTimeSlots(diaSelecionado);
 }
 
 function selectTimeSlot(slotText, startTime, element) {
@@ -1393,6 +1797,19 @@ function selectTimeSlot(slotText, startTime, element) {
   if (element) {
     element.classList.add('selected');
   }
+}
+
+async function handleConfirmBooking() {
+  if (AppState.currentMotorista) {
+    AppState.booking.motoristaId = AppState.currentMotorista.id;
+  } else {
+    AppState.booking.motoristaId = AppState.currentMotoristaId || 1;
+  }
+  const reservaResult = await ApiService.createReserva(AppState.booking);
+  if (reservaResult && reservaResult.id) {
+    AppState.booking.reservaId = reservaResult.id;
+  }
+  navigateTo('screen-checkout');
 }
 
 function updateBookingCalculations() {
@@ -1462,6 +1879,11 @@ function renderScreenCheckout() {
         <div class="receipt-total">
           <span>Total a pagar:</span>
           <span class="total-amount">R$ ${AppState.booking.total.toFixed(2).replace('.', ',')}</span>
+        </div>
+
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 10px 12px; margin-top: 12px; font-size: 11px; color: #065F46; display: flex; gap: 8px; align-items: center;">
+          <i class="ri-shield-keyhole-fill" style="font-size: 18px; color: #059669; flex-shrink: 0;"></i>
+          <span><strong>Regra de Segurança:</strong> O endereço exato com número e as instruções de acesso ao imóvel serão <strong>desbloqueados imediatamente</strong> na tela de confirmação após a aprovação do pagamento.</span>
         </div>
       </div>
 
@@ -1738,26 +2160,46 @@ function initTimeStatusBar() {
   setInterval(updateTime, 30000);
 }
 
-function bindDesktopToggle() {
-  const buttons = document.querySelectorAll('#toggle-frame-btn, .btn-view-toggle');
+window.alternarModoVisualizacao = function(mode) {
   const container = document.querySelector('.app-container');
-  if (!container || buttons.length === 0) return;
+  if (!container) return;
+  const btnMobile = document.getElementById('btn-view-mobile');
+  const btnFullscreen = document.getElementById('btn-view-fullscreen');
 
-  buttons.forEach(btn => {
+  if (mode === 'mobile') {
+    container.classList.remove('fullscreen-mode');
+    container.classList.add('phone-frame');
+    if (btnMobile) btnMobile.classList.add('active');
+    if (btnFullscreen) btnFullscreen.classList.remove('active');
+  } else {
+    container.classList.remove('phone-frame');
+    container.classList.add('fullscreen-mode');
+    if (btnFullscreen) btnFullscreen.classList.add('active');
+    if (btnMobile) btnMobile.classList.remove('active');
+  }
+
+  if (AppState.map) {
+    setTimeout(() => AppState.map.invalidateSize(), 300);
+  }
+};
+
+function bindDesktopToggle() {
+  const btnMobile = document.getElementById('btn-view-mobile');
+  const btnFullscreen = document.getElementById('btn-view-fullscreen');
+
+  if (btnMobile) {
+    btnMobile.addEventListener('click', () => alternarModoVisualizacao('mobile'));
+  }
+  if (btnFullscreen) {
+    btnFullscreen.addEventListener('click', () => alternarModoVisualizacao('fullscreen'));
+  }
+
+  const legacyButtons = document.querySelectorAll('#toggle-frame-btn, .btn-view-toggle');
+  legacyButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      container.classList.toggle('phone-frame');
-      container.classList.toggle('fullscreen-mode');
-      const isFrame = container.classList.contains('phone-frame');
-      
-      buttons.forEach(b => {
-        b.innerHTML = isFrame 
-          ? '<i class="ri-fullscreen-line"></i> Modo Tela Cheia' 
-          : '<i class="ri-smartphone-line"></i> Modo Mobile';
-      });
-      
-      if (AppState.map) {
-        setTimeout(() => AppState.map.invalidateSize(), 300);
-      }
+      const container = document.querySelector('.app-container');
+      const isCurrentlyFrame = container && container.classList.contains('phone-frame');
+      alternarModoVisualizacao(isCurrentlyFrame ? 'fullscreen' : 'mobile');
     });
   });
 }

@@ -23,6 +23,15 @@ public class Local {
 
     private Boolean acessoEnderecoAposPagamento = true;
 
+    private Boolean possuiVagaEstacionamento = true;
+
+    private String tipoVagaEstacionamento;
+
+    private Boolean autorizacaoCondominio = true;
+
+    @Column(columnDefinition = "TEXT")
+    private String detalhesVaga;
+
     public enum TipoAmbiente {
         RESIDENCIAL, COMERCIAL
     }
@@ -42,4 +51,16 @@ public class Local {
     public void setInstrucoesAcesso(String instrucoesAcesso) { this.instrucoesAcesso = instrucoesAcesso; }
     public Boolean getAcessoEnderecoAposPagamento() { return acessoEnderecoAposPagamento; }
     public void setAcessoEnderecoAposPagamento(Boolean acessoEnderecoAposPagamento) { this.acessoEnderecoAposPagamento = acessoEnderecoAposPagamento; }
+
+    public Boolean getPossuiVagaEstacionamento() { return possuiVagaEstacionamento; }
+    public void setPossuiVagaEstacionamento(Boolean possuiVagaEstacionamento) { this.possuiVagaEstacionamento = possuiVagaEstacionamento; }
+
+    public String getTipoVagaEstacionamento() { return tipoVagaEstacionamento; }
+    public void setTipoVagaEstacionamento(String tipoVagaEstacionamento) { this.tipoVagaEstacionamento = tipoVagaEstacionamento; }
+
+    public Boolean getAutorizacaoCondominio() { return autorizacaoCondominio; }
+    public void setAutorizacaoCondominio(Boolean autorizacaoCondominio) { this.autorizacaoCondominio = autorizacaoCondominio; }
+
+    public String getDetalhesVaga() { return detalhesVaga; }
+    public void setDetalhesVaga(String detalhesVaga) { this.detalhesVaga = detalhesVaga; }
 }
