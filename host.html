@@ -801,9 +801,7 @@
     function fazerLogoutHost() {
       sessionStorage.removeItem('recarga_facil_host');
       currentHost = null;
-      document.getElementById('host-dashboard-screen').style.display = 'none';
-      document.getElementById('host-login-screen').style.display = 'flex';
-      showToast('Sessão encerrada com sucesso.');
+      window.location.replace('index.html');
     }
 
     function trocarAbaHost(abaId, btnEl) {
