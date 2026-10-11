@@ -1,10 +1,13 @@
 package com.recargafacil.service;
 
+import com.recargafacil.dto.CadastroMotoristaDTO;
 import com.recargafacil.dto.MotoristaDTO;
 import com.recargafacil.model.Motorista;
 import com.recargafacil.model.Usuario;
+import com.recargafacil.model.Veiculo;
 import com.recargafacil.repository.MotoristaRepository;
 import com.recargafacil.repository.UsuarioRepository;
+import com.recargafacil.repository.VeiculoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -18,6 +21,9 @@ public class MotoristaService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private VeiculoRepository veiculoRepository;
 
     /**
      * RF01: Cadastrar Motorista
@@ -46,6 +52,38 @@ public class MotoristaService {
         motorista.setTelefone(dto.getTelefone());
 
         return motoristaRepository.save(motorista);
+    }
+
+    public Motorista cadastrarComVeiculo(CadastroMotoristaDTO dto) {
+        // 1. Cria usuário
+        Usuario usuario = new Usuario();
+        usuario.setNome(dto.getNome());
+        usuario.setEmail(dto.getEmail());
+        usuario.setSenha(dto.getSenha() != null && !dto.getSenha().isBlank() ? dto.getSenha() : "123456");
+        usuario = usuarioRepository.save(usuario);
+
+        // 2. Cria motorista
+        Motorista motorista = new Motorista();
+        motorista.setUsuario(usuario);
+        motorista.setNome(dto.getNome());
+        motorista.setCpf(dto.getCpf());
+        motorista.setEmail(dto.getEmail());
+        motorista.setTelefone(dto.getTelefone());
+        motorista = motoristaRepository.save(motorista);
+
+        // 3. Cria veículo se informado
+        if (dto.getModelo() != null && !dto.getModelo().isBlank()) {
+            Veiculo veiculo = new Veiculo();
+            veiculo.setMotorista(motorista);
+            veiculo.setMarca(dto.getMarca() != null ? dto.getMarca() : "EV");
+            veiculo.setModelo(dto.getModelo());
+            veiculo.setPlaca(dto.getPlaca() != null ? dto.getPlaca().toUpperCase() : "SEM-PLACA");
+            veiculo.setRenavan(dto.getRenavan());
+            veiculo.setTipoConector(dto.getTipoConector() != null ? dto.getTipoConector() : Veiculo.TipoConector.TIPO_2);
+            veiculoRepository.save(veiculo);
+        }
+
+        return motorista;
     }
 
     public List<Motorista> listar() {

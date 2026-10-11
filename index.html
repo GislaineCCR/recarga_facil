@@ -519,11 +519,26 @@
   <p style="margin-top:8px">© 2026 Recarga Fácil Tecnologia S.A. Todos os direitos reservados. · Sorocaba/SP</p>
 </footer>
 
-<!-- MODAL DE LOGIN DO MOTORISTA NA LANDING PAGE -->
-<div id="modal-login-motorista-lp" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
-  <div style="background: #1E293B; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 32px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); color: #F8FAFC;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <div style="display: flex; align-items: center; gap: 10px;">
+<!-- MODAL DE LOGIN E CADASTRO DO MOTORISTA NA LANDING PAGE -->
+<div id="modal-login-motorista-lp" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
+  <div style="background: #1E293B; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 28px; width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.5); color: #F8FAFC; position: relative;">
+    
+    <!-- Topo com Abas e Botão Fechar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="display: flex; gap: 6px; background: #0F172A; padding: 4px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
+        <button id="lp-tab-login" type="button" onclick="alternarAbaAuthLP('login')" style="padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background: #00D084; color: #064E3B; transition: all 0.2s;">
+          Já tenho conta
+        </button>
+        <button id="lp-tab-cadastro" type="button" onclick="alternarAbaAuthLP('cadastro')" style="padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: #94A3B8; transition: all 0.2s;">
+          Criar cadastro
+        </button>
+      </div>
+      <button onclick="fecharModalLoginLP()" style="background: none; border: none; font-size: 24px; color: #94A3B8; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <!-- PAINEL 1: LOGIN DO MOTORISTA -->
+    <div id="lp-painel-login">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
         <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(0, 208, 132, 0.15); color: #00D084; display: flex; align-items: center; justify-content: center; font-size: 20px;">
           ⚡
         </div>
@@ -532,51 +547,183 @@
           <span id="lp-modal-subtitle" style="font-size: 11px; color: #94A3B8;">Faça login para encontrar estações e reservar</span>
         </div>
       </div>
-      <button onclick="fecharModalLoginLP()" style="background: none; border: none; font-size: 24px; color: #94A3B8; cursor: pointer; line-height: 1;">&times;</button>
+
+      <form id="lp-form-login-motorista" onsubmit="realizarLoginMotoristaLP(event)">
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 12px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 6px;">E-mail do Motorista</label>
+          <input type="email" id="lp-motorista-email" required placeholder="seu@email.com" value="motorista@email.com" 
+                 style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 14px; box-sizing: border-box; outline: none;">
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <label style="font-size: 12px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 6px;">Senha</label>
+          <input type="password" id="lp-motorista-senha" required placeholder="••••••••" value="senha123" 
+                 style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 14px; box-sizing: border-box; outline: none;">
+        </div>
+
+        <button type="submit" id="lp-btn-login" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 800; border-radius: 10px; background: #00D084; color: #064E3B; border: none; cursor: pointer; margin-bottom: 10px;">
+          Acessar Plataforma & Mapa
+        </button>
+
+        <button type="button" onclick="alternarAbaAuthLP('cadastro')" style="width: 100%; padding: 11px; font-size: 13px; font-weight: 700; border-radius: 10px; background: rgba(56, 189, 248, 0.12); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3); cursor: pointer;">
+          ✨ Ainda não tem conta? Criar cadastro
+        </button>
+      </form>
+
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <p style="font-size: 11px; color: #94A3B8; margin-bottom: 8px; font-weight: 600;">Contas cadastradas no MySQL:</p>
+        <button type="button" onclick="preencherLoginLP('motorista@email.com', 'senha123')" 
+                style="width: 100%; text-align: left; padding: 8px 12px; margin-bottom: 6px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: #0F172A; cursor: pointer; color: #CBD5E1;">
+          🚗 <strong>Motorista Demo EV</strong> (BYD Dolphin GS)
+        </button>
+        <button type="button" onclick="preencherLoginLP('gislaine.c.cesario@gmail.com', '1234')" 
+                style="width: 100%; text-align: left; padding: 8px 12px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: #0F172A; cursor: pointer; color: #CBD5E1;">
+          ⚡ <strong>Gislaine Cristina</strong>
+        </button>
+      </div>
     </div>
 
-    <form id="lp-form-login-motorista" onsubmit="realizarLoginMotoristaLP(event)">
-      <div style="margin-bottom: 14px;">
-        <label style="font-size: 12px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 6px;">E-mail do Motorista</label>
-        <input type="email" id="lp-motorista-email" required placeholder="seu@email.com" value="motorista@email.com" 
-               style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 14px; box-sizing: border-box; outline: none;">
+    <!-- PAINEL 2: CRIAR CADASTRO DO MOTORISTA -->
+    <div id="lp-painel-cadastro" style="display: none;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); color: #38BDF8; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+          🚗
+        </div>
+        <div>
+          <h3 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0;">Criar Cadastro de Motorista</h3>
+          <span style="font-size: 11px; color: #94A3B8;">Cadastre-se e informe seu veículo elétrico</span>
+        </div>
       </div>
 
-      <div style="margin-bottom: 18px;">
-        <label style="font-size: 12px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 6px;">Senha</label>
-        <input type="password" id="lp-motorista-senha" required placeholder="••••••••" value="senha123" 
-               style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 14px; box-sizing: border-box; outline: none;">
-      </div>
+      <form id="lp-form-cadastro-motorista" onsubmit="realizarCadastroMotoristaLP(event)">
+        <!-- Seção 1: Dados Pessoais -->
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #00D084; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <span>1. Dados Pessoais</span>
+        </div>
 
-      <button type="submit" id="lp-btn-login" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 800; border-radius: 10px; background: #00D084; color: #064E3B; border: none; cursor: pointer;">
-        Acessar Plataforma & Mapa
-      </button>
-    </form>
+        <div style="margin-bottom: 10px;">
+          <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">Nome Completo *</label>
+          <input type="text" id="lp-cad-nome" required placeholder="Ex: Roberto Mendes" 
+                 style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;">
+        </div>
 
-    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-      <p style="font-size: 11px; color: #94A3B8; margin-bottom: 8px; font-weight: 600;">Contas cadastradas no MySQL:</p>
-      <button type="button" onclick="preencherLoginLP('motorista@email.com', 'senha123')" 
-              style="width: 100%; text-align: left; padding: 8px 12px; margin-bottom: 6px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: #0F172A; cursor: pointer; color: #CBD5E1;">
-        🚗 <strong>Motorista Demo EV</strong> (BYD Dolphin GS)
-      </button>
-      <button type="button" onclick="preencherLoginLP('gislaine.c.cesario@gmail.com', '1234')" 
-              style="width: 100%; text-align: left; padding: 8px 12px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: #0F172A; cursor: pointer; color: #CBD5E1;">
-        ⚡ <strong>Gislaine Cristina</strong>
-      </button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">CPF *</label>
+            <input type="text" id="lp-cad-cpf" required placeholder="000.000.000-00" 
+                   style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;">
+          </div>
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">Telefone / WhatsApp *</label>
+            <input type="text" id="lp-cad-telefone" required placeholder="(15) 99887-6655" 
+                   style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">E-mail *</label>
+            <input type="email" id="lp-cad-email" required placeholder="seu@email.com" 
+                   style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;">
+          </div>
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">Senha *</label>
+            <input type="password" id="lp-cad-senha" required placeholder="Crie uma senha" 
+                   style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;">
+          </div>
+        </div>
+
+        <!-- Seção 2: Dados do Veículo Elétrico -->
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #38BDF8; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <span>2. Veículo Elétrico</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">Marca *</label>
+            <input type="text" id="lp-cad-marca" required placeholder="Ex: BYD, GWM, Volvo" 
+                   style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;">
+          </div>
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">Modelo *</label>
+            <input type="text" id="lp-cad-modelo" required placeholder="Ex: Dolphin GS" 
+                   style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">Placa *</label>
+            <input type="text" id="lp-cad-placa" required placeholder="Ex: BRA2E19" 
+                   style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none; text-transform: uppercase;">
+          </div>
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">Renavam *</label>
+            <input type="text" id="lp-cad-renavam" required placeholder="Ex: 12345678901" 
+                   style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <label style="font-size: 11px; font-weight: 700; color: #CBD5E1; display: block; margin-bottom: 4px;">Tipo de Conector *</label>
+          <select id="lp-cad-conector" required 
+                  style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0F172A; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;">
+            <option value="TIPO_2" selected>Tipo 2 / Mennekes (Padrão mais comum no Brasil)</option>
+            <option value="CCS2">CCS 2 Combo (Carga Rápida DC / Rodovias)</option>
+            <option value="GB_T">GB/T (Padrão Chinês / BYD)</option>
+            <option value="TIPO_1">Tipo 1 / J1772 (Padrão Americano/Japonês)</option>
+          </select>
+        </div>
+
+        <button type="submit" id="lp-btn-cadastrar" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 800; border-radius: 10px; background: #00D084; color: #064E3B; border: none; cursor: pointer; margin-bottom: 10px;">
+          Cadastrar e Acessar Plataforma
+        </button>
+
+        <button type="button" onclick="alternarAbaAuthLP('login')" style="width: 100%; padding: 8px; font-size: 12px; font-weight: 600; border: none; background: transparent; color: #94A3B8; cursor: pointer; text-decoration: underline;">
+          Já tem conta cadastrada? Entrar com e-mail e senha
+        </button>
+      </form>
     </div>
+
   </div>
 </div>
 
 <script src="js/script.js"></script>
 <script>
-  function abrirModalLoginLP() {
+  function abrirModalLoginLP(abaPadrao = 'login') {
     const modal = document.getElementById('modal-login-motorista-lp');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+      modal.style.display = 'flex';
+      alternarAbaAuthLP(abaPadrao);
+    }
   }
 
   function fecharModalLoginLP() {
     const modal = document.getElementById('modal-login-motorista-lp');
     if (modal) modal.style.display = 'none';
+  }
+
+  function alternarAbaAuthLP(aba) {
+    const painelLogin = document.getElementById('lp-painel-login');
+    const painelCadastro = document.getElementById('lp-painel-cadastro');
+    const tabLogin = document.getElementById('lp-tab-login');
+    const tabCadastro = document.getElementById('lp-tab-cadastro');
+
+    if (aba === 'cadastro') {
+      painelLogin.style.display = 'none';
+      painelCadastro.style.display = 'block';
+      tabCadastro.style.background = '#00D084';
+      tabCadastro.style.color = '#064E3B';
+      tabLogin.style.background = 'transparent';
+      tabLogin.style.color = '#94A3B8';
+    } else {
+      painelLogin.style.display = 'block';
+      painelCadastro.style.display = 'none';
+      tabLogin.style.background = '#00D084';
+      tabLogin.style.color = '#064E3B';
+      tabCadastro.style.background = 'transparent';
+      tabCadastro.style.color = '#94A3B8';
+    }
   }
 
   function preencherLoginLP(email, senha) {
@@ -590,7 +737,7 @@
     if (motorista) {
       window.location.href = 'app.html';
     } else {
-      abrirModalLoginLP();
+      abrirModalLoginLP('login');
     }
   }
 
@@ -619,10 +766,54 @@
         alert(err.error || 'Credenciais inválidas.');
       }
     } catch (err) {
-      alert('Erro ao conectar ao servidor.');
+      alert('Erro ao conectar ao servidor Java Spring Boot.');
     } finally {
       btn.disabled = false;
       btn.innerText = 'Acessar Plataforma & Mapa';
+    }
+  }
+
+  async function realizarCadastroMotoristaLP(e) {
+    e.preventDefault();
+    const nome = document.getElementById('lp-cad-nome').value.trim();
+    const cpf = document.getElementById('lp-cad-cpf').value.trim();
+    const email = document.getElementById('lp-cad-email').value.trim();
+    const telefone = document.getElementById('lp-cad-telefone').value.trim();
+    const senha = document.getElementById('lp-cad-senha').value.trim();
+    const marca = document.getElementById('lp-cad-marca').value.trim();
+    const modelo = document.getElementById('lp-cad-modelo').value.trim();
+    const placa = document.getElementById('lp-cad-placa').value.trim().toUpperCase();
+    const renavan = document.getElementById('lp-cad-renavam').value.trim();
+    const tipoConector = document.getElementById('lp-cad-conector').value;
+
+    const btn = document.getElementById('lp-btn-cadastrar');
+    btn.disabled = true;
+    btn.innerText = 'Cadastrando no sistema...';
+
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/cadastro-motorista', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome, cpf, email, telefone, senha,
+          marca, modelo, placa, renavan, tipoConector
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        sessionStorage.setItem('recarga_facil_motorista', JSON.stringify(data));
+        alert('Cadastro realizado com sucesso! Bem-vindo à plataforma Recarga Fácil.');
+        window.location.href = 'app.html';
+      } else {
+        const err = await response.json();
+        alert(err.error || 'Erro ao realizar cadastro.');
+      }
+    } catch (err) {
+      alert('Erro ao conectar ao servidor Java Spring Boot.');
+    } finally {
+      btn.disabled = false;
+      btn.innerText = 'Cadastrar e Acessar Plataforma';
     }
   }
 
@@ -630,9 +821,11 @@
   document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('login') === 'motorista') {
-      abrirModalLoginLP();
+      abrirModalLoginLP('login');
       const sub = document.getElementById('lp-modal-subtitle');
-      if (sub) sub.innerText = 'Você precisa fazer login para acessar o mapa e as recargas';
+      if (sub) sub.innerText = 'Você precisa fazer login ou criar cadastro para acessar o mapa';
+    } else if (params.get('cadastro') === 'motorista') {
+      abrirModalLoginLP('cadastro');
     }
 
     // Intercepta links para app.html

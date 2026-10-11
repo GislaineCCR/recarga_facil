@@ -220,14 +220,38 @@ function atualizarBannerMaisProxima() {
 /* ==========================================================================
    AUTENTICAÇÃO & SESSÃO DO MOTORISTA
    ========================================================================== */
-function abrirModalLoginMotorista() {
+function abrirModalLoginMotorista(abaPadrao = 'login') {
   const modal = document.getElementById('modal-login-motorista');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.display = 'flex';
+    alternarAbaAuthApp(abaPadrao);
+  }
 }
 
 function fecharModalLoginMotorista() {
   const modal = document.getElementById('modal-login-motorista');
   if (modal) modal.style.display = 'none';
+}
+
+function alternarAbaAuthApp(aba) {
+  const painelLogin = document.getElementById('app-painel-login');
+  const painelCadastro = document.getElementById('app-painel-cadastro');
+  const tabLogin = document.getElementById('app-tab-login');
+  const tabCadastro = document.getElementById('app-tab-cadastro');
+
+  if (!painelLogin || !painelCadastro) return;
+
+  if (aba === 'cadastro') {
+    painelLogin.style.display = 'none';
+    painelCadastro.style.display = 'block';
+    if (tabCadastro) { tabCadastro.style.background = 'var(--primary)'; tabCadastro.style.color = '#fff'; }
+    if (tabLogin) { tabLogin.style.background = 'transparent'; tabLogin.style.color = '#64748B'; }
+  } else {
+    painelLogin.style.display = 'block';
+    painelCadastro.style.display = 'none';
+    if (tabLogin) { tabLogin.style.background = 'var(--primary)'; tabLogin.style.color = '#fff'; }
+    if (tabCadastro) { tabCadastro.style.background = 'transparent'; tabCadastro.style.color = '#64748B'; }
+  }
 }
 
 function preencherLoginMotorista(email, senha) {
@@ -271,6 +295,56 @@ async function realizarLoginMotorista(event) {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="ri-login-box-line"></i> Entrar como Motorista';
+  }
+}
+
+async function realizarCadastroMotoristaApp(event) {
+  event.preventDefault();
+  const nome = document.getElementById('app-cad-nome').value.trim();
+  const cpf = document.getElementById('app-cad-cpf').value.trim();
+  const email = document.getElementById('app-cad-email').value.trim();
+  const telefone = document.getElementById('app-cad-telefone').value.trim();
+  const senha = document.getElementById('app-cad-senha').value.trim();
+  const marca = document.getElementById('app-cad-marca').value.trim();
+  const modelo = document.getElementById('app-cad-modelo').value.trim();
+  const placa = document.getElementById('app-cad-placa').value.trim().toUpperCase();
+  const renavan = document.getElementById('app-cad-renavam').value.trim();
+  const tipoConector = document.getElementById('app-cad-conector').value;
+
+  const btn = document.getElementById('app-btn-cadastrar');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Cadastrando...';
+
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/auth/cadastro-motorista`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome, cpf, email, telefone, senha,
+        marca, modelo, placa, renavan, tipoConector
+      })
+    });
+
+    if (response.ok) {
+      const motoristaData = await response.json();
+      sessionStorage.setItem('recarga_facil_motorista', JSON.stringify(motoristaData));
+      AppState.currentMotorista = motoristaData;
+      AppState.currentMotoristaId = motoristaData.id;
+      atualizarBarraMotorista();
+      fecharModalLoginMotorista();
+      showToast(`Cadastro realizado! Bem-vindo, ${motoristaData.nome}!`);
+      if (AppState.currentScreen === 'screen-profile') renderScreenProfile();
+      if (AppState.currentScreen === 'screen-bookings-list') renderScreenBookingsList();
+    } else {
+      const err = await response.json();
+      alert(err.error || 'Erro ao realizar cadastro.');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Erro ao conectar ao servidor Java Spring Boot.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ri-user-add-line"></i> Cadastrar e Acessar';
   }
 }
 

@@ -1,5 +1,6 @@
 package com.recargafacil.controller;
 
+import com.recargafacil.dto.CadastroMotoristaDTO;
 import com.recargafacil.dto.LoginRequest;
 import com.recargafacil.dto.MotoristaDTO;
 import com.recargafacil.dto.HostDTO;
@@ -103,6 +104,24 @@ public class AuthController {
         response.put("cpf", motorista.getCpf());
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/cadastro-motorista")
+    @Operation(summary = "Cadastro completo de novo Motorista com Veículo")
+    public ResponseEntity<?> cadastrarMotoristaComVeiculo(@RequestBody CadastroMotoristaDTO dto) {
+        try {
+            Motorista motorista = motoristaService.cadastrarComVeiculo(dto);
+            Map<String, Object> response = new HashMap<>();
+            response.put("tipo", "MOTORISTA");
+            response.put("id", motorista.getId());
+            response.put("nome", motorista.getNome());
+            response.put("email", motorista.getEmail());
+            response.put("telefone", motorista.getTelefone());
+            response.put("cpf", motorista.getCpf());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/registro-motorista")
