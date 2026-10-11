@@ -1121,13 +1121,6 @@ async function renderScreenProfile() {
         </div>
         
         ${veiculosCardsHtml}
-
-        <!-- BOTÃO GRANDE DESTAQUE PARA CADASTRAR OUTRO VEÍCULO -->
-        <div style="margin-top: 10px;">
-          <button type="button" class="btn btn-primary" style="width: 100%; padding: 12px 16px; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; box-shadow: 0 3px 10px rgba(0, 208, 132, 0.25); cursor: pointer;" onclick="abrirModalCadastrarVeiculo()">
-            <i class="ri-add-circle-fill" style="font-size: 18px;"></i> + Cadastrar Outro Veículo Elétrico
-          </button>
-        </div>
       </div>
     `;
 
