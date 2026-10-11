@@ -21,6 +21,10 @@ const AppState = {
   currentScreen: 'screen-search',
   previousScreen: null,
   selectedWallbox: null,
+  currentMotorista: null,
+  currentMotoristaId: null,
+  currentVeiculo: null,
+  veiculosDoMotorista: [],
   activeTypeFilter: 'todos', // 'todos' | 'residencial' | 'comercial'
   favoritesFilter: 'todos',
   selectedAmenities: new Set(), // ['wifi', 'cafe', 'coberto', ...]
@@ -47,7 +51,8 @@ const AppState = {
     platformFee: 7.50,
     total: 37.50,
     paymentMethod: 'pix',
-    reservationCode: 'REC-84920'
+    reservationCode: 'REC-84920',
+    veiculoSelecionado: null
   },
   userBookings: [],
   map: null,
@@ -1027,34 +1032,102 @@ async function renderScreenProfile() {
     };
     AppState.currentMotorista = motorista;
 
-    const todosVeiculos = await ApiService.getVeiculos();
-    const veiculoDoMotorista = todosVeiculos.find(v => v.motorista && v.motorista.id === motorista.id) || null;
-    AppState.currentVeiculo = veiculoDoMotorista;
+    // Busca todos os veículos vinculados a este motorista
+    let veiculosDoMotorista = [];
+    try {
+      veiculosDoMotorista = await ApiService.getVeiculosPorMotorista(motorista.id);
+    } catch (e) {
+      console.warn("Fallback ao buscar veículos:", e);
+    }
+    if (!veiculosDoMotorista || veiculosDoMotorista.length === 0) {
+      const todosVeiculos = await ApiService.getVeiculos();
+      veiculosDoMotorista = (todosVeiculos || []).filter(v => v.motorista && v.motorista.id === motorista.id);
+    }
+    AppState.veiculosDoMotorista = veiculosDoMotorista;
+    AppState.currentVeiculo = veiculosDoMotorista.length > 0 ? veiculosDoMotorista[0] : null;
+    if (veiculosDoMotorista.length > 0 && !AppState.booking.veiculoSelecionado) {
+      AppState.booking.veiculoSelecionado = veiculosDoMotorista[0];
+    }
 
     // Métricas reais calculadas a partir das reservas no banco
     const sessoes = AppState.userBookings.length;
     const kwhTotal = sessoes * 35; // estimativa de kWh por sessão
     const co2Evitado = (kwhTotal * 0.42).toFixed(1);
 
-    const veiculoHtml = veiculoDoMotorista ? `
-      <div class="card mb-3">
+    const formatarConector = (conector) => {
+      const mapa = {
+        'TIPO_2': 'Tipo 2 / Mennekes',
+        'CCS2': 'CCS 2 Combo',
+        'GB_T': 'GB/T (BYD/China)',
+        'TIPO_1': 'Tipo 1 (J1772)'
+      };
+      return mapa[conector] || conector || 'Tipo 2';
+    };
+
+    const veiculosCardsHtml = (veiculosDoMotorista && veiculosDoMotorista.length > 0) ? veiculosDoMotorista.map((v, idx) => `
+      <div class="card mb-2" style="border: 1px solid #E2E8F0; padding: 14px; border-radius: 12px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
         <div class="d-flex justify-between align-center mb-2">
-          <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Meu Veículo Elétrico</span>
-          <span class="badge badge-power"><i class="ri-plug-line"></i> ${veiculoDoMotorista.tipoConector || 'Tipo 2'}</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 10px; font-weight: 800; color: #059669; background: #ECFDF5; padding: 2px 8px; border-radius: 6px; letter-spacing: 0.5px; text-transform: uppercase;">
+              ${idx === 0 ? '★ Carro Principal' : `Carro #${idx + 1}`}
+            </span>
+          </div>
+          <span class="badge badge-power" style="font-size: 11px;"><i class="ri-plug-line"></i> ${formatarConector(v.tipoConector)}</span>
         </div>
         <div class="d-flex gap-3 align-center">
-          <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: #ECFDF5; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--secondary);">
-            <i class="ri-car-line"></i>
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #F0FDF4; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #059669; flex-shrink: 0; border: 1px solid #DCFCE7;">
+            <i class="ri-car-fill"></i>
           </div>
-          <div>
-            <h4 style="font-size: 14px; font-weight: 800;">${veiculoDoMotorista.marca ? veiculoDoMotorista.marca + ' ' : ''}${veiculoDoMotorista.modelo || 'Veículo Elétrico'}</h4>
-            <p style="font-size: 12px; color: var(--text-muted);">Placa: ${veiculoDoMotorista.placa || 'Sem placa'} • RENAVAM: ${veiculoDoMotorista.renavan || 'N/D'}</p>
+          <div style="flex: 1;">
+            <h4 style="font-size: 14px; font-weight: 800; margin: 0; color: #0F172A;">
+              ${v.marca ? v.marca + ' ' : ''}${v.modelo || 'Veículo Elétrico'}
+            </h4>
+            <div style="font-size: 11px; color: #64748B; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+              <span>Placa: <strong style="color: #1E293B; background: #F1F5F9; padding: 1px 6px; border-radius: 4px; font-family: monospace;">${v.placa || 'Sem placa'}</strong></span>
+              <span>•</span>
+              <span>RENAVAM: <strong style="color: #475569;">${v.renavan || 'N/D'}</strong></span>
+            </div>
           </div>
         </div>
       </div>
-    ` : `
-      <div class="card mb-3 text-center" style="padding: 16px;">
-        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Nenhum veículo vinculado a este motorista no momento.</p>
+    `).join('') : `
+      <div class="card mb-3 text-center" style="padding: 24px 16px; border: 1.5px dashed #CBD5E1; background: #F8FAFC; border-radius: 12px;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: #E2E8F0; color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 10px auto;">
+          <i class="ri-car-line"></i>
+        </div>
+        <h4 style="font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 4px;">Nenhum veículo cadastrado</h4>
+        <p style="font-size: 12px; color: #64748B; margin-bottom: 12px;">Cadastre seu carro elétrico para liberar agendamentos e recargas na rede.</p>
+        <button class="btn btn-primary" style="font-size: 12px; padding: 8px 16px; margin: 0 auto; display: inline-flex; align-items: center; gap: 6px;" onclick="abrirModalCadastrarVeiculo()">
+          <i class="ri-add-line"></i> Cadastrar Meu Primeiro Carro
+        </button>
+      </div>
+    `;
+
+    const secaoVeiculosHtml = `
+      <div style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <h3 style="font-size: 15px; font-weight: 800; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 6px;">
+              <i class="ri-car-fill" style="color: var(--primary);"></i> Meus Veículos Elétricos
+              <span style="font-size: 11px; font-weight: 700; background: #ECFDF5; color: #047857; padding: 2px 8px; border-radius: 99px; border: 1px solid #A7F3D0;">
+                ${veiculosDoMotorista.length} ${veiculosDoMotorista.length === 1 ? 'carro cadastrado' : 'carros cadastrados'}
+              </span>
+            </h3>
+            <span style="font-size: 11px; color: #64748B;">Cadastre e alterne entre seus carros elétricos</span>
+          </div>
+          <button class="btn btn-primary" style="font-size: 12px; padding: 6px 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; border-radius: 8px;" onclick="abrirModalCadastrarVeiculo()" title="Cadastrar outro veículo elétrico">
+            <i class="ri-add-line"></i> + Adicionar Carro
+          </button>
+        </div>
+        
+        ${veiculosCardsHtml}
+
+        <!-- BOTÃO GRANDE DESTAQUE PARA CADASTRAR OUTRO VEÍCULO -->
+        <div style="margin-top: 10px;">
+          <button type="button" class="btn btn-primary" style="width: 100%; padding: 12px 16px; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; box-shadow: 0 3px 10px rgba(0, 208, 132, 0.25); cursor: pointer;" onclick="abrirModalCadastrarVeiculo()">
+            <i class="ri-add-circle-fill" style="font-size: 18px;"></i> + Cadastrar Outro Veículo Elétrico
+          </button>
+        </div>
       </div>
     `;
 
@@ -1085,8 +1158,8 @@ async function renderScreenProfile() {
           </div>
         </div>
 
-        <!-- Veículo Elétrico Cadastrado -->
-        ${veiculoHtml}
+        <!-- Veículos Elétricos Cadastrados (Multi-veículos) -->
+        ${secaoVeiculosHtml}
 
         <!-- Dashboard de Impacto Sustentável -->
         <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Seu Impacto Sustentável</h3>
@@ -1110,6 +1183,18 @@ async function renderScreenProfile() {
 
         <!-- Menu de Opções -->
         <div class="profile-menu-list mb-3">
+          <!-- OPÇÃO DEDICADA: CADASTRAR OUTRO VEÍCULO -->
+          <div class="profile-menu-item" onclick="abrirModalCadastrarVeiculo()" style="border-left: 3px solid var(--primary); background: #F8FAFC;">
+            <div class="menu-left">
+              <div class="menu-icon" style="color: #059669; background: #ECFDF5;"><i class="ri-car-line"></i></div>
+              <div>
+                <span style="display: block; font-weight: 800; color: #065F46;">Cadastrar Outro Veículo Elétrico</span>
+                <span style="display: block; font-size: 11px; color: #64748B;">Adicione mais um carro elétrico (BYD, Volvo, Tesla)</span>
+              </div>
+            </div>
+            <i class="ri-add-line" style="color: var(--primary); font-size: 20px; font-weight: 800;"></i>
+          </div>
+
           <div class="profile-menu-item" onclick="abrirModalAtualizarCadastro()">
             <div class="menu-left">
               <div class="menu-icon" style="color: #0284C7; background: #E0F2FE;"><i class="ri-user-settings-line"></i></div>
@@ -1255,6 +1340,83 @@ window.salvarAtualizacaoCadastroMotorista = async function(event) {
       btn.disabled = false;
       btn.innerHTML = '<i class="ri-check-line"></i> Salvar Alterações';
     }
+  }
+};
+
+/* ==========================================================================
+   GERENCIAMENTO DE MÚLTIPLOS VEÍCULOS (MULTI-VEÍCULOS DO MOTORISTA)
+   ========================================================================== */
+window.abrirModalCadastrarVeiculo = function() {
+  const modal = document.getElementById('modal-cadastrar-veiculo');
+  if (!modal) return;
+  const form = document.getElementById('form-cadastrar-veiculo');
+  if (form) form.reset();
+  modal.style.display = 'flex';
+};
+
+window.fecharModalCadastrarVeiculo = function() {
+  const modal = document.getElementById('modal-cadastrar-veiculo');
+  if (modal) modal.style.display = 'none';
+};
+
+window.handleSalvarNovoVeiculo = async function(event) {
+  event.preventDefault();
+  const motorista = AppState.currentMotorista;
+  if (!motorista || !motorista.id) {
+    alert("Por favor, faça login como motorista primeiro.");
+    return;
+  }
+
+  const marca = document.getElementById('novo-veiculo-marca').value.trim();
+  const modelo = document.getElementById('novo-veiculo-modelo').value.trim();
+  const placa = document.getElementById('novo-veiculo-placa').value.trim().toUpperCase();
+  const renavam = document.getElementById('novo-veiculo-renavam').value.trim();
+  const tipoConector = document.getElementById('novo-veiculo-conector').value;
+
+  const btn = document.getElementById('btn-salvar-novo-veiculo');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Salvando veículo...';
+  }
+
+  try {
+    const payload = {
+      idMotorista: motorista.id,
+      marca,
+      modelo,
+      placa,
+      renavan: renavam,
+      tipoConector
+    };
+
+    const novo = await ApiService.cadastrarVeiculo(payload);
+    fecharModalCadastrarVeiculo();
+    showToast(`Veículo ${marca} ${modelo} (${placa}) cadastrado com sucesso!`);
+
+    if (!AppState.veiculosDoMotorista) AppState.veiculosDoMotorista = [];
+    AppState.veiculosDoMotorista.push(novo);
+    AppState.currentVeiculo = novo;
+    AppState.booking.veiculoSelecionado = novo;
+
+    await renderScreenProfile();
+  } catch (err) {
+    console.error("Erro ao cadastrar novo veículo:", err);
+    alert(err.message || "Erro ao salvar veículo no servidor.");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ri-add-line"></i> Salvar Veículo';
+    }
+  }
+};
+
+window.selecionarVeiculoParaAgendamento = function(veiculoId) {
+  const v = (AppState.veiculosDoMotorista || []).find(item => item.id === veiculoId);
+  if (v) {
+    AppState.booking.veiculoSelecionado = v;
+    showToast(`Veículo selecionado: ${v.marca} ${v.modelo}`);
+    const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
+    if (wb) renderScreenBookingContent(wb);
   }
 };
 
@@ -1576,6 +1738,25 @@ async function renderScreenBooking() {
   AppState.booking.selectedDateIso = diaSelecionado.isoDate;
   AppState.booking.currentDayAgenda = diaSelecionado;
 
+  // Garante carregamento dos veículos do motorista para seleção na reserva
+  if (!AppState.veiculosDoMotorista || AppState.veiculosDoMotorista.length === 0) {
+    const motoristaId = AppState.currentMotoristaId || (AppState.currentMotorista && AppState.currentMotorista.id) || 1;
+    try {
+      let veics = await ApiService.getVeiculosPorMotorista(motoristaId);
+      if (!veics || veics.length === 0) {
+        const todos = await ApiService.getVeiculos();
+        veics = (todos || []).filter(v => v.motorista && v.motorista.id === motoristaId);
+      }
+      AppState.veiculosDoMotorista = veics || [];
+    } catch (e) {
+      console.warn("Erro ao carregar veículos para agendamento:", e);
+    }
+  }
+
+  if (AppState.veiculosDoMotorista && AppState.veiculosDoMotorista.length > 0 && !AppState.booking.veiculoSelecionado) {
+    AppState.booking.veiculoSelecionado = AppState.veiculosDoMotorista[0];
+  }
+
   renderScreenBookingContent(wb);
 }
 
@@ -1614,6 +1795,42 @@ function renderScreenBookingContent(wb) {
     `;
   }).join('');
 
+  const veiculos = AppState.veiculosDoMotorista || [];
+  let seletorVeiculoHtml = '';
+  if (veiculos.length > 0) {
+    if (!AppState.booking.veiculoSelecionado) {
+      AppState.booking.veiculoSelecionado = veiculos[0];
+    }
+    seletorVeiculoHtml = `
+      <!-- SELEÇÃO DO VEÍCULO PARA A RECARGA (MULTI-VEÍCULOS) -->
+      <div class="booking-section-card" style="margin-bottom: 16px;">
+        <div class="section-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span><i class="ri-car-fill text-primary"></i> Veículo para esta Recarga</span>
+          <button type="button" onclick="abrirModalCadastrarVeiculo()" style="background: none; border: none; font-size: 11px; color: var(--primary); font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px; padding: 0;">
+            <i class="ri-add-line"></i> + Outro Carro
+          </button>
+        </div>
+        <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
+          ${veiculos.map(v => {
+            const isSel = AppState.booking.veiculoSelecionado && AppState.booking.veiculoSelecionado.id === v.id;
+            return `
+              <div onclick="selecionarVeiculoParaAgendamento(${v.id})" 
+                   style="flex: 1; min-width: 155px; padding: 10px 12px; border-radius: 10px; border: 2px solid ${isSel ? 'var(--primary)' : '#CBD5E1'}; background: ${isSel ? '#ECFDF5' : '#FFFFFF'}; cursor: pointer; transition: all 0.2s;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <strong style="font-size: 13px; color: ${isSel ? '#065F46' : '#1E293B'};">${v.marca} ${v.modelo}</strong>
+                  ${isSel ? '<i class="ri-checkbox-circle-fill" style="color: var(--primary); font-size: 16px;"></i>' : '<i class="ri-checkbox-blank-circle-line" style="color: #94A3B8; font-size: 16px;"></i>'}
+                </div>
+                <div style="font-size: 11px; color: #64748B; margin-top: 4px;">
+                  Placa: <strong style="color: #334155;">${v.placa}</strong> • <span class="badge badge-power" style="font-size: 9px; padding: 2px 5px;">${v.tipoConector || 'Tipo 2'}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   container.innerHTML = `
     <div class="screen-header-nav">
       <button class="btn-icon" onclick="goBack()"><i class="ri-arrow-left-line"></i></button>
@@ -1641,6 +1858,9 @@ function renderScreenBookingContent(wb) {
           <strong>Regra de Segurança:</strong> O endereço completo (rua, número) e as instruções de acesso ao ponto de recarga só serão <strong>liberados após a confirmação do pagamento</strong> por segurança do anfitrião.
         </div>
       </div>
+
+      <!-- SELETOR DE VEÍCULO ELÉTRICO -->
+      ${seletorVeiculoHtml}
 
       <!-- 1. SELETOR DE DATA / DIA DA SEMANA -->
       <div class="booking-section-card">
@@ -1895,6 +2115,11 @@ function renderScreenCheckout() {
           <span>Ponto de Recarga:</span>
           <strong class="text-main">${wb.title}</strong>
         </div>
+        ${AppState.booking.veiculoSelecionado ? `
+        <div class="receipt-row">
+          <span>Veículo Agendado:</span>
+          <strong class="text-main">${AppState.booking.veiculoSelecionado.marca} ${AppState.booking.veiculoSelecionado.modelo} (${AppState.booking.veiculoSelecionado.placa})</strong>
+        </div>` : ''}
         <div class="receipt-row">
           <span>Data e Horário:</span>
           <span>${AppState.booking.date} • ${AppState.booking.timeSlot}</span>

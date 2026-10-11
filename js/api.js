@@ -243,6 +243,43 @@ const ApiService = {
   },
 
   /**
+   * BUSCAR VEÍCULOS DE UM MOTORISTA ESPECÍFICO
+   */
+  async getVeiculosPorMotorista(idMotorista) {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/veiculos/motorista/${idMotorista}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.error("Erro ao buscar veículos do motorista:", err);
+    }
+    return [];
+  },
+
+  /**
+   * CADASTRAR NOVO VEÍCULO PARA MOTORISTA
+   */
+  async cadastrarVeiculo(veiculoData) {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/veiculos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(veiculoData)
+      });
+      if (response.ok) {
+        return await response.json();
+      } else {
+        const err = await response.json();
+        throw new Error(err.error || 'Erro ao cadastrar veículo');
+      }
+    } catch (err) {
+      console.error("Erro ao cadastrar veículo na API:", err);
+      throw err;
+    }
+  },
+
+  /**
    * BUSCAR TODOS OS MOTORISTAS
    */
   async getMotoristas() {

@@ -47,7 +47,7 @@ public class AuthController {
     @PostMapping("/login-host")
     @Operation(summary = "Login exclusivo para Anfitrião (Host)")
     public ResponseEntity<?> loginHost(@RequestBody LoginRequest login) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmailAndSenha(login.getEmail(), login.getSenha());
+        Optional<Usuario> usuarioOpt = usuarioRepository.findFirstByEmailAndSenha(login.getEmail(), login.getSenha());
         if (usuarioOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "E-mail ou senha incorretos."));
@@ -78,7 +78,7 @@ public class AuthController {
     @PostMapping("/login-motorista")
     @Operation(summary = "Login exclusivo para Cliente / Motorista")
     public ResponseEntity<?> loginMotorista(@RequestBody LoginRequest login) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmailAndSenha(login.getEmail(), login.getSenha());
+        Optional<Usuario> usuarioOpt = usuarioRepository.findFirstByEmailAndSenha(login.getEmail(), login.getSenha());
         if (usuarioOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "E-mail ou senha incorretos."));

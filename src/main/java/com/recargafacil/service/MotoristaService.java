@@ -36,12 +36,19 @@ public class MotoristaService {
             usuario = usuarioRepository.findById(dto.getIdUsuario())
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado com ID: " + dto.getIdUsuario()));
         } else {
-            // Criação automática do registro base de Usuario caso não tenha ID prévio
-            Usuario novoUsuario = new Usuario();
-            novoUsuario.setNome(dto.getNome());
-            novoUsuario.setEmail(dto.getEmail());
-            novoUsuario.setSenha(dto.getSenha() != null ? dto.getSenha() : "123456");
-            usuario = usuarioRepository.save(novoUsuario);
+            // Reutiliza usuário existente com o mesmo e-mail ou cria novo
+            usuario = usuarioRepository.findFirstByEmail(dto.getEmail())
+                    .orElseGet(() -> {
+                        Usuario novoUsuario = new Usuario();
+                        novoUsuario.setNome(dto.getNome());
+                        novoUsuario.setEmail(dto.getEmail());
+                        novoUsuario.setSenha(dto.getSenha() != null ? dto.getSenha() : "123456");
+                        return usuarioRepository.save(novoUsuario);
+                    });
+            if (dto.getSenha() != null && !dto.getSenha().isBlank()) {
+                usuario.setSenha(dto.getSenha());
+                usuarioRepository.save(usuario);
+            }
         }
 
         Motorista motorista = new Motorista();
@@ -55,12 +62,19 @@ public class MotoristaService {
     }
 
     public Motorista cadastrarComVeiculo(CadastroMotoristaDTO dto) {
-        // 1. Cria usuário
-        Usuario usuario = new Usuario();
-        usuario.setNome(dto.getNome());
-        usuario.setEmail(dto.getEmail());
-        usuario.setSenha(dto.getSenha() != null && !dto.getSenha().isBlank() ? dto.getSenha() : "123456");
-        usuario = usuarioRepository.save(usuario);
+        // 1. Reutiliza ou cria usuário
+        Usuario usuario = usuarioRepository.findFirstByEmail(dto.getEmail())
+                .orElseGet(() -> {
+                    Usuario novo = new Usuario();
+                    novo.setNome(dto.getNome());
+                    novo.setEmail(dto.getEmail());
+                    novo.setSenha(dto.getSenha() != null && !dto.getSenha().isBlank() ? dto.getSenha() : "123456");
+                    return usuarioRepository.save(novo);
+                });
+        if (dto.getSenha() != null && !dto.getSenha().isBlank()) {
+            usuario.setSenha(dto.getSenha());
+            usuarioRepository.save(usuario);
+        }
 
         // 2. Cria motorista
         Motorista motorista = new Motorista();

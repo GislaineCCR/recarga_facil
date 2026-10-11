@@ -21,32 +21,47 @@ INSERT INTO usuario (nome, email, senha) VALUES
 ('Carlos Eduardo Mendes', 'carlos@recargafacil.com', 'senha123'),
 ('Nexus Coworking Hub', 'contato@nexushub.com', 'senha123'),
 ('Dra. Mariana Santos', 'mariana@recargafacil.com', 'senha123'),
-('Motorista Demo EV', 'motorista@email.com', 'senha123');
+('Motorista Demo EV', 'motorista@email.com', 'senha123'),
+('Gislaine Cristina Cesario Rodrigues', 'gislaine.c.cesario@gmail.com', '1234');
 
 SET @user_carlos = 1;
 SET @user_nexus = 2;
 SET @user_mariana = 3;
 SET @user_motorista = 4;
+SET @user_gislaine = 5;
 
--- 2. MOTORISTA REGISTRADO (Para agendamentos na Tela 3)
+-- 2. MOTORISTAS REGISTRADOS (Para agendamentos na Tela 3)
 INSERT INTO motorista (id_usuario, nome, cpf, email, telefone) VALUES
-(@user_motorista, 'Motorista Demo EV', '123.456.789-00', 'motorista@email.com', '(15) 99876-5432');
-SET @id_motorista_demo = 1;
+(@user_motorista, 'Motorista Demo EV', '123.456.789-00', 'motorista@email.com', '(15) 99876-5432'),
+(@user_gislaine, 'Gislaine Cristina Cesario Rodrigues', '36316445822', 'gislaine.c.cesario@gmail.com', '(11) 99269-6670');
 
--- 3. VEÍCULO ELÉTRICO
+SET @id_motorista_demo = 1;
+SET @id_motorista_gislaine = 2;
+
+-- 3. VEÍCULOS ELÉTRICOS (SUPORTE A MULTI-VEÍCULOS POR CONDUTOR)
 INSERT INTO veiculo (id_motorista, modelo, marca, placa, renavan, tipo_conector) VALUES
-(@id_motorista_demo, 'Dolphin EV', 'BYD', 'BRA2E19', '12345678901', 'TIPO_2');
+-- Veículos do Motorista Demo:
+(@id_motorista_demo, 'Dolphin EV', 'BYD', 'BRA2E19', '12345678901', 'TIPO_2'),
+(@id_motorista_demo, 'EX30 Ultra', 'Volvo', 'VOL2E26', '98765432109', 'CCS2'),
+-- Multi-Veículos da Motorista Gislaine:
+(@id_motorista_gislaine, 'Song Plus DM-i', 'BYD', 'GIS2026', '55443322110', 'TIPO_2'),
+(@id_motorista_gislaine, 'EX30 Plus', 'Volvo', 'GIS3E26', '99887766554', 'CCS2');
+
 SET @id_veiculo_demo = 1;
+SET @id_veiculo_gislaine_1 = 3;
+SET @id_veiculo_gislaine_2 = 4;
 
 -- 4. ANFITRIÕES (HOSTS)
 INSERT INTO host (id_usuario, nome, email, cpf, telefone, dados_bancarios) VALUES
 (@user_carlos, 'Carlos Eduardo M.', 'carlos@recargafacil.com', '321.654.987-11', '(15) 99123-8899', 'PIX: carlos@recargafacil.com (Nubank)'),
 (@user_nexus, 'Nexus Hub Inovação', 'contato@nexushub.com', '12.345.678/0001-90', '(15) 3211-9000', 'PIX: 12.345.678/0001-90 (Itaú)'),
-(@user_mariana, 'Dra. Mariana Santos', 'mariana@recargafacil.com', '456.789.123-55', '(15) 98144-5566', 'PIX: mariana@recargafacil.com (Santander)');
+(@user_mariana, 'Dra. Mariana Santos', 'mariana@recargafacil.com', '456.789.123-55', '(15) 98144-5566', 'PIX: mariana@recargafacil.com (Santander)'),
+(@user_gislaine, 'Gislaine Cristina Cesario Rodrigues', 'gislaine.c.cesario@gmail.com', '36316445822', '(11) 99269-6670', 'PIX: gislaine.c.cesario@gmail.com (Nubank)');
 
 SET @host_carlos = 1;
 SET @host_nexus = 2;
 SET @host_mariana = 3;
+SET @host_gislaine = 4;
 
 -- 5. LOCAIS (COORDENADAS SOROCABA/SP - TELA 1 E ENDEREÇO PROTEGIDO)
 INSERT INTO local (latitude, longitude, endereco_completo, tipo_ambiente, instrucoes_acesso, acesso_endereco_apos_pagamento) VALUES
