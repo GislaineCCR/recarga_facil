@@ -5,6 +5,7 @@ public class HostDTO {
     private String nome;
     private String email;
     private String dadosBancarios;
+    private String senha;
 
     // Getters and Setters
     public Long getIdUsuario() { return idUsuario; }
@@ -15,4 +16,6 @@ public class HostDTO {
     public void setEmail(String email) { this.email = email; }
     public String getDadosBancarios() { return dadosBancarios; }
     public void setDadosBancarios(String dadosBancarios) { this.dadosBancarios = dadosBancarios; }
+    public String getSenha() { return senha; }
+    public void setSenha(String senha) { this.senha = senha; }
 }

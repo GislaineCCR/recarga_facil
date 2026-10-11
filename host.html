@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recarga Fácil — Portal do Anfitrião (Host)</title>
+
+  <!-- Tipografia Moderna -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Remix Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #00D084;
+      --primary-dark: #059669;
+      --primary-light: #ECFDF5;
+      --accent: #F59E0B;
+      --bg-dark: #0F172A;
+      --bg-card: #1E293B;
+      --border-dark: rgba(255, 255, 255, 0.1);
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --danger: #EF4444;
+      --success: #10B981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOAST */
+    #toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--primary);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 99999;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* LOGIN SCREEN DO HOST */
+    #host-login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      background: radial-gradient(circle at 50% 20%, #1E293B 0%, #0F172A 100%);
+    }
+
+    .login-box {
+      background: rgba(30, 41, 59, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-dark);
+      border-radius: 20px;
+      padding: 36px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 208, 132, 0.12);
+      border: 1px solid rgba(0, 208, 132, 0.3);
+      color: var(--primary);
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .login-header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .login-header p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #CBD5E1;
+    }
+
+    .form-control {
+      width: 100%;
+      background: #0F172A;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 208, 132, 0.2);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #064E3B;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      background: #00BF72;
+      transform: translateY(-1px);
+    }
+
+    .quick-access-box {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-dark);
+    }
+
+    .quick-access-box p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .quick-btn {
+      background: #0F172A;
+      border: 1px solid var(--border-dark);
+      color: #94A3B8;
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin-bottom: 6px;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:hover {
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* PAINEL DO HOST */
+    #host-dashboard-screen {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .top-nav {
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-dark);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: rgba(0, 208, 132, 0.15);
+      border: 1px solid var(--primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-size: 20px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .host-pill {
+      background: #1E293B;
+      border: 1px solid var(--border-dark);
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .main-content {
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* KPI CARDS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary);
+    }
+
+    .kpi-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* ABAS DE NAVEGAÇÃO */
+    .tabs-nav {
+      display: flex;
+      gap: 10px;
+      border-bottom: 1px solid var(--border-dark);
+      margin-bottom: 24px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* TABELA DE RESERVAS */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 16px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background: rgba(15, 23, 42, 0.6);
+      color: var(--text-muted);
+      padding: 14px 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-dark);
+    }
+
+    td {
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #CBD5E1;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status-concluida {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10B981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-pendente {
+      background: rgba(245, 158, 11, 0.15);
+      color: #F59E0B;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* CARDS DE WALLBOX */
+    .wallbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .wallbox-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wallbox-card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+    }
+
+    .wallbox-body {
+      padding: 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* FORM CARD */
+    .form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 720px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="toast">
+    <i class="ri-checkbox-circle-fill" style="color: var(--primary);"></i>
+    <span id="toast-msg">Mensagem</span>
+  </div>
+
+  <!-- =========================================================================
+       TELA 1: LOGIN ESPECÍFICO DO ANFITRIÃO (HOST)
+       ========================================================================= -->
+  <div id="host-login-screen">
+    <div class="login-box">
+      <div class="login-header">
+        <div class="logo-badge">
+          <i class="ri-home-wifi-line"></i> Área do Anfitrião
+        </div>
+        <h1>Portal do Host</h1>
+        <p>Gerencie suas estações de recarga, agendamentos recebidos e faturamento líquido.</p>
+      </div>
+
+      <form id="host-login-form" onsubmit="realizarLoginHost(event)">
+        <div class="form-group">
+          <label>E-mail do Anfitrião</label>
+          <input type="email" id="host-email" class="form-control" placeholder="carlos@recargafacil.com" required value="carlos@recargafacil.com">
+        </div>
+
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="host-senha" class="form-control" placeholder="••••••••" required value="senha123">
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="btn-login-host">
+          <i class="ri-login-box-line"></i> Acessar Painel do Host
+        </button>
+      </form>
+
+      <div class="quick-access-box">
+        <p>Acesso rápido aos Anfitriões de Demonstração:</p>
+        <button class="quick-btn" onclick="preencherLoginHost('carlos@recargafacil.com', 'senha123')">
+          👤 <strong>Carlos Eduardo M.</strong> (Campolim - 7.4kW)
+        </button>
+        <button class="quick-btn" onclick="preencherLoginHost('contato@nexushub.com', 'senha123')">
+          🏢 <strong>Nexus Hub Inovação</strong> (Coworking - 22kW)
+        </button>
+        <button class="quick-btn" onclick="preencherLoginHost('mariana@recargafacil.com', 'senha123')">
+          ☀️ <strong>Dra. Mariana Santos</strong> (Jd. América Solar - 11kW)
+        </button>
+      </div>
+
+      <div style="text-align: center; margin-top: 18px;">
+        <a href="index.html" style="color: var(--text-muted); font-size: 12px; text-decoration: none;">
+          ← Voltar para a Página Inicial
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       TELA 2: PAINEL DO ANFITRIÃO AUTENTICADO
+       ========================================================================= -->
+  <div id="host-dashboard-screen">
+    <!-- Barra Superior -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <div class="brand-icon">
+          <i class="ri-charging-pile-2-fill"></i>
+        </div>
+        <div>
+          <h2 style="font-size: 17px; font-weight: 800;">Recarga Fácil</h2>
+          <span style="font-size: 11px; color: var(--primary); font-weight: 700; text-transform: uppercase;">Portal do Anfitrião</span>
+        </div>
+      </div>
+
+      <div class="user-info">
+        <div class="host-pill">
+          <i class="ri-user-star-fill" style="color: var(--accent);"></i>
+          <span id="host-nome-display">Carlos Eduardo M.</span>
+        </div>
+        <div class="host-pill" style="color: #94A3B8; font-size: 12px;" id="host-pix-display">
+          PIX: carlos@recargafacil.com
+        </div>
+        <button class="btn" style="background: rgba(239,68,68,0.15); color: #EF4444; padding: 6px 14px; font-size: 12px;" onclick="fazerLogoutHost()">
+          <i class="ri-logout-box-r-line"></i> Sair
+        </button>
+      </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+      <!-- KPIs do Período -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-title">
+            <span>Total Recebido no Período</span>
+            <i class="ri-money-dollar-circle-line" style="color: var(--primary); font-size: 18px;"></i>
+          </div>
+          <div class="kpi-value" id="kpi-total-recebido" style="color: var(--primary);">R$ 0,00</div>
+          <div class="kpi-sub">Líquido a receber (75% das recargas)</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-title">
+            <span>Total Faturado Bruto</span>
+            <i class="ri-wallet-3-line" style="color: var(--accent); font-size: 18px;"></i>
+          </div>
+          <div class="kpi-value" id="kpi-total-faturado">R$ 0,00</div>
+          <div class="kpi-sub">Taxa da plataforma deduzida: <strong id="kpi-taxa-deduzida">R$ 0,00</strong></div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-title">
+            <span>Sessões de Recarga</span>
+            <i class="ri-flashlight-line" style="color: #38BDF8; font-size: 18px;"></i>
+          </div>
+          <div class="kpi-value" id="kpi-total-sessoes">0</div>
+          <div class="kpi-sub">Agendamentos realizados em suas estações</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-title">
+            <span>Estações Ativas</span>
+            <i class="ri-map-pin-2-line" style="color: #A855F7; font-size: 18px;"></i>
+          </div>
+          <div class="kpi-value" id="kpi-total-estacoes">0</div>
+          <div class="kpi-sub">Pontos cadastrados no sistema</div>
+        </div>
+      </div>
+
+      <!-- Abas de Navegação -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" onclick="trocarAbaHost('aba-agendamentos', this)">
+          <i class="ri-calendar-check-line"></i> Quem & Quando Agendou
+        </button>
+        <button class="tab-btn" onclick="trocarAbaHost('aba-estacoes', this)">
+          <i class="ri-charging-pile-line"></i> Minhas Estações de Recarga
+        </button>
+        <button class="tab-btn" onclick="trocarAbaHost('aba-cadastro', this)">
+          <i class="ri-add-circle-line"></i> Cadastrar Novo Ponto de Recarga
+        </button>
+      </div>
+
+      <!-- ABA 1: QUEM E QUANDO AGENDOU (RESERVAS) -->
+      <div id="aba-agendamentos" class="tab-pane active">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800;">Histórico de Agendamentos das Suas Estações</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">Veja exatamente quem reservou, qual carro, horário e quanto você recebe.</p>
+          </div>
+          <button class="btn" style="background: #1E293B; border: 1px solid var(--border-dark); color: #fff; font-size: 12px;" onclick="carregarDadosDoHost()">
+            <i class="ri-refresh-line"></i> Atualizar
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Motorista (Quem)</th>
+                <th>Contato</th>
+                <th>Veículo / Placa</th>
+                <th>Quando (Data & Horário)</th>
+                <th>Estação</th>
+                <th>Valor Líquido</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-reservas-host">
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                  Carregando agendamentos...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ABA 2: MINHAS ESTAÇÕES -->
+      <div id="aba-estacoes" class="tab-pane">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800;">Pontos de Recarga Vinculados à Sua Conta</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">Equipamentos Wallbox disponíveis para os motoristas no mapa.</p>
+          </div>
+          <button class="btn btn-primary" style="font-size: 13px; width: auto;" onclick="trocarAbaHost('aba-cadastro', document.querySelectorAll('.tab-btn')[2])">
+            <i class="ri-add-line"></i> Adicionar Estação
+          </button>
+        </div>
+
+        <div class="wallbox-grid" id="grid-wallboxes-host">
+          <!-- Cards inseridos via JS -->
+        </div>
+      </div>
+
+      <!-- ABA 3: CADASTRAR NOVO PONTO DE RECARGA -->
+      <div id="aba-cadastro" class="tab-pane">
+        <div class="form-card">
+          <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 6px;">Cadastrar Novo Ponto de Recarga</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">
+            Insira os dados técnicos e o endereço da sua garagem ou vaga comercial para disponibilizar aos motoristas.
+          </p>
+
+          <form id="form-cadastrar-wallbox" onsubmit="salvarNovaWallboxHost(event)">
+            <div class="form-group">
+              <label>Nome / Modelo do Carregador</label>
+              <input type="text" id="novo-modelo" class="form-control" placeholder="Ex: Wallbox WEG Smart 7.4kW ou Hub BMW iWallbox" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div class="form-group">
+                <label>Potência do Equipamento</label>
+                <select id="novo-potencia" class="form-control" required>
+                  <option value="P_7KW">7.4 kW (Monofásico / Residencial)</option>
+                  <option value="P_11KW">11 kW (Trifásico Residencial / Solar)</option>
+                  <option value="P_22KW">22 kW (Trifásico Rápido Comercial)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Preço por Hora de Recarga (R$/h)</label>
+                <input type="number" step="0.50" id="novo-preco" class="form-control" placeholder="15.00" value="15.00" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Tipo de Ambiente</label>
+              <select id="novo-ambiente" class="form-control">
+                <option value="RESIDENCIAL">Residencial (Garagem Privada / Condomínio)</option>
+                <option value="COMERCIAL">Comercial (Estacionamento / Coworking / Loja)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Endereço Completo</label>
+              <input type="text" id="novo-endereco" class="form-control" placeholder="Rua, Número, Bairro, Cidade - UF" required>
+              <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                🔒 O endereço exato é protegido e só é liberado para o motorista após a confirmação do pagamento.
+              </small>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div class="form-group">
+                <label>Latitude (Coordenada)</label>
+                <input type="number" step="any" id="novo-lat" class="form-control" placeholder="-23.5100" value="-23.5100" required>
+              </div>
+              <div class="form-group">
+                <label>Longitude (Coordenada)</label>
+                <input type="number" step="any" id="novo-lng" class="form-control" placeholder="-47.4600" value="-47.4600" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Comodidades Disponíveis (separadas por vírgula)</label>
+              <input type="text" id="novo-comodidades" class="form-control" placeholder="wifi, cafe, coberto, banheiro, cameras" value="wifi, cafe, coberto, banheiro">
+            </div>
+
+            <div class="form-group">
+              <label>Instruções de Acesso (Portaria / Garagem)</label>
+              <textarea id="novo-instrucoes" class="form-control" rows="3" placeholder="Ex: Identifique-se na portaria com o código de reserva. Vaga na garagem da direita."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>URL da Foto do Ponto</label>
+              <input type="url" id="novo-foto" class="form-control" placeholder="https://images.unsplash.com/..." value="https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=800&q=80">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+              <i class="ri-check-line"></i> Gravar Ponto de Recarga no Banco de Dados
+            </button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8080/api';
+    let currentHost = null;
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedHost = sessionStorage.getItem('recarga_facil_host');
+      if (savedHost) {
+        try {
+          currentHost = JSON.parse(savedHost);
+          exibirDashboardHost();
+        } catch (e) {
+          sessionStorage.removeItem('recarga_facil_host');
+        }
+      }
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      toast.style.display = 'flex';
+      setTimeout(() => { toast.style.display = 'none'; }, 3500);
+    }
+
+    function preencherLoginHost(email, senha) {
+      document.getElementById('host-email').value = email;
+      document.getElementById('host-senha').value = senha;
+    }
+
+    async function realizarLoginHost(event) {
+      event.preventDefault();
+      const email = document.getElementById('host-email').value.trim();
+      const senha = document.getElementById('host-senha').value.trim();
+      const btn = document.getElementById('btn-login-host');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Autenticando...';
+
+      try {
+        const response = await fetch(`${API_BASE}/auth/login-host`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha })
+        });
+
+        if (response.ok) {
+          currentHost = await response.json();
+          sessionStorage.setItem('recarga_facil_host', JSON.stringify(currentHost));
+          showToast(`Bem-vindo, ${currentHost.nome}!`);
+          exibirDashboardHost();
+        } else {
+          const err = await response.json();
+          alert(err.error || 'Falha na autenticação do Anfitrião.');
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Erro ao conectar ao servidor Java Spring Boot.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ri-login-box-line"></i> Acessar Painel do Host';
+      }
+    }
+
+    function exibirDashboardHost() {
+      document.getElementById('host-login-screen').style.display = 'none';
+      document.getElementById('host-dashboard-screen').style.display = 'flex';
+
+      document.getElementById('host-nome-display').innerText = currentHost.nome;
+      document.getElementById('host-pix-display').innerText = currentHost.dadosBancarios || currentHost.email;
+
+      carregarDadosDoHost();
+    }
+
+    function fazerLogoutHost() {
+      sessionStorage.removeItem('recarga_facil_host');
+      currentHost = null;
+      document.getElementById('host-dashboard-screen').style.display = 'none';
+      document.getElementById('host-login-screen').style.display = 'flex';
+      showToast('Sessão encerrada com sucesso.');
+    }
+
+    function trocarAbaHost(abaId, btnEl) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(abaId).classList.add('active');
+      if (btnEl) btnEl.classList.add('active');
+    }
+
+    async function carregarDadosDoHost() {
+      if (!currentHost) return;
+
+      try {
+        // 1. Resumo Financeiro
+        const resFin = await fetch(`${API_BASE}/hosts/${currentHost.id}/financeiro`);
+        if (resFin.ok) {
+          const fin = await resFin.json();
+          document.getElementById('kpi-total-recebido').innerText = `R$ ${Number(fin.totalRecebidoLiquido).toFixed(2).replace('.', ',')}`;
+          document.getElementById('kpi-total-faturado').innerText = `R$ ${Number(fin.totalFaturado).toFixed(2).replace('.', ',')}`;
+          document.getElementById('kpi-taxa-deduzida').innerText = `R$ ${Number(fin.taxaPlataforma).toFixed(2).replace('.', ',')}`;
+          document.getElementById('kpi-total-sessoes').innerText = fin.totalSessoes;
+          document.getElementById('kpi-total-estacoes').innerText = fin.totalWallboxes;
+        }
+
+        // 2. Quem e Quando Agendou (Reservas)
+        const resReservas = await fetch(`${API_BASE}/hosts/${currentHost.id}/reservas`);
+        if (resReservas.ok) {
+          const reservas = await resReservas.json();
+          renderizarTabelaReservas(reservas);
+        }
+
+        // 3. Minhas Estações
+        const resWallboxes = await fetch(`${API_BASE}/hosts/${currentHost.id}/wallboxes`);
+        if (resWallboxes.ok) {
+          const wallboxes = await resWallboxes.json();
+          renderizarGridWallboxes(wallboxes);
+        }
+      } catch (e) {
+        console.error("Erro ao carregar dados do host:", e);
+      }
+    }
+
+    function renderizarTabelaReservas(reservas) {
+      const tbody = document.getElementById('tabela-reservas-host');
+      if (!reservas || reservas.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              Nenhum agendamento registrado para suas estações até o momento.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = reservas.map(r => {
+        const statusClass = (r.statusReserva === 'CONCLUIDA') ? 'status-concluida' : 'status-pendente';
+        const valorLiquido = Number(r.valorLiquidoHost || 0).toFixed(2).replace('.', ',');
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 700; color: #fff;">${r.motoristaNome || 'Motorista'}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${r.motoristaEmail || ''}</div>
+            </td>
+            <td>${r.motoristaTelefone || 'N/A'}</td>
+            <td>
+              <div style="font-weight: 600;">${r.veiculoModelo || 'Veículo Elétrico'}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Placa: ${r.veiculoPlaca || 'N/A'}</div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: #38BDF8;">${r.dataReserva}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${r.horario}</div>
+            </td>
+            <td>${r.wallboxModelo}</td>
+            <td style="font-weight: 800; color: var(--primary);">R$ ${valorLiquido}</td>
+            <td>
+              <span class="status-badge ${statusClass}">
+                <i class="ri-checkbox-circle-fill"></i> ${r.statusReserva}
+              </span>
+            </td>
+            <td>
+              <select style="background: #0F172A; border: 1px solid var(--border-dark); color: #fff; font-size: 11px; padding: 4px 6px; border-radius: 6px;" 
+                      onchange="atualizarStatusReservaHost(${r.idReserva}, this.value)">
+                <option value="PENDENTE" ${r.statusReserva === 'PENDENTE' ? 'selected' : ''}>Pendente</option>
+                <option value="CONCLUIDA" ${r.statusReserva === 'CONCLUIDA' ? 'selected' : ''}>Concluída</option>
+                <option value="CANCELADA" ${r.statusReserva === 'CANCELADA' ? 'selected' : ''}>Cancelada</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function atualizarStatusReservaHost(idReserva, novoStatus) {
+      try {
+        const response = await fetch(`${API_BASE}/reservas/${idReserva}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: novoStatus })
+        });
+        if (response.ok) {
+          showToast(`Status da reserva #${idReserva} alterado para ${novoStatus}!`);
+          carregarDadosDoHost();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderizarGridWallboxes(wallboxes) {
+      const grid = document.getElementById('grid-wallboxes-host');
+      if (!wallboxes || wallboxes.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--bg-card); border-radius: 16px;">
+            <p style="color: var(--text-muted);">Você ainda não cadastrou nenhuma estação.</p>
+            <button class="btn btn-primary mt-3" style="width: auto;" onclick="trocarAbaHost('aba-cadastro', document.querySelectorAll('.tab-btn')[2])">
+              Cadastrar Minha Primeira Estação
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = wallboxes.map(wb => {
+        const local = wb.local || {};
+        const potenciaFormatada = wb.potencia ? wb.potencia.replace('P_', '').replace('KW', ' kW') : '7.4 kW';
+        const preco = Number(wb.precoHora || 15).toFixed(2).replace('.', ',');
+
+        return `
+          <div class="wallbox-card">
+            <img src="${wb.fotoUrl || 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=800&q=80'}" alt="${wb.modelo}">
+            <div class="wallbox-body">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                <h4 style="font-size: 15px; font-weight: 800; color: #fff;">${wb.modelo}</h4>
+                <span class="status-badge status-concluida">${wb.status || 'DISPONÍVEL'}</span>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                <i class="ri-map-pin-line"></i> ${local.enderecoCompleto || 'Endereço cadastrado'}
+              </p>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-dark);">
+                <div>
+                  <span style="font-size: 11px; color: var(--text-muted);">Potência</span>
+                  <div style="font-weight: 700; color: #38BDF8;">${potenciaFormatada}</div>
+                </div>
+                <div>
+                  <span style="font-size: 11px; color: var(--text-muted);">Preço Hora</span>
+                  <div style="font-weight: 800; color: var(--primary);">R$ ${preco}/h</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function salvarNovaWallboxHost(event) {
+      event.preventDefault();
+      if (!currentHost) return;
+
+      const payload = {
+        idHost: currentHost.id,
+        modelo: document.getElementById('novo-modelo').value.trim(),
+        potencia: document.getElementById('novo-potencia').value,
+        precoHora: parseFloat(document.getElementById('novo-preco').value),
+        tipoAmbiente: document.getElementById('novo-ambiente').value,
+        enderecoCompleto: document.getElementById('novo-endereco').value.trim(),
+        latitude: parseFloat(document.getElementById('novo-lat').value),
+        longitude: parseFloat(document.getElementById('novo-lng').value),
+        comodidades: document.getElementById('novo-comodidades').value.trim(),
+        instrucoesAcesso: document.getElementById('novo-instrucoes').value.trim(),
+        fotoUrl: document.getElementById('novo-foto').value.trim(),
+        status: "DISPONIVEL",
+        acessoEnderecoAposPagamento: true
+      };
+
+      try {
+        const response = await fetch(`${API_BASE}/hosts/${currentHost.id}/wallboxes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          showToast("Ponto de recarga cadastrado com sucesso no MySQL!");
+          document.getElementById('form-cadastrar-wallbox').reset();
+          trocarAbaHost('aba-estacoes', document.querySelectorAll('.tab-btn')[1]);
+          carregarDadosDoHost();
+        } else {
+          alert("Falha ao salvar estação.");
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Erro na conexão com o servidor.");
+      }
+    }
+  </script>
+</body>
+</html>

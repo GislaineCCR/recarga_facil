@@ -2,16 +2,9 @@ package com.recargafacil.dto;
 
 import com.recargafacil.model.Local.TipoAmbiente;
 import com.recargafacil.model.Wallbox.Potencia;
+import com.recargafacil.model.Wallbox.Status;
 import java.math.BigDecimal;
 
-/**
- * ============================================================================
- * DTO: WallboxDTO (Data Transfer Object)
- * ============================================================================
- * FUNÇÃO: Objeto de transferência de dados que recebe as informações enviadas
- * pelo Front-end durante o cadastro de um novo ponto de recarga por um Host.
- * ============================================================================
- */
 public class WallboxDTO {
     private Long idHost;
     private Double latitude;
@@ -19,9 +12,13 @@ public class WallboxDTO {
     private String enderecoCompleto;
     private TipoAmbiente tipoAmbiente;
     private String instrucoesAcesso;
+    private Boolean acessoEnderecoAposPagamento;
     private String modelo;
     private Potencia potencia;
     private BigDecimal precoHora;
+    private String comodidades;
+    private String fotoUrl;
+    private Status status;
 
     // Getters and Setters
     public Long getIdHost() { return idHost; }
@@ -42,6 +39,9 @@ public class WallboxDTO {
     public String getInstrucoesAcesso() { return instrucoesAcesso; }
     public void setInstrucoesAcesso(String instrucoesAcesso) { this.instrucoesAcesso = instrucoesAcesso; }
 
+    public Boolean getAcessoEnderecoAposPagamento() { return acessoEnderecoAposPagamento; }
+    public void setAcessoEnderecoAposPagamento(Boolean acessoEnderecoAposPagamento) { this.acessoEnderecoAposPagamento = acessoEnderecoAposPagamento; }
+
     public String getModelo() { return modelo; }
     public void setModelo(String modelo) { this.modelo = modelo; }
 
@@ -50,4 +50,13 @@ public class WallboxDTO {
 
     public BigDecimal getPrecoHora() { return precoHora; }
     public void setPrecoHora(BigDecimal precoHora) { this.precoHora = precoHora; }
+
+    public String getComodidades() { return comodidades; }
+    public void setComodidades(String comodidades) { this.comodidades = comodidades; }
+
+    public String getFotoUrl() { return fotoUrl; }
+    public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
+
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
 }

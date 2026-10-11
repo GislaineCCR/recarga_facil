@@ -5,6 +5,17 @@
  * Integrado com a API REST em Java Spring Boot (via js/api.js).
  */
 
+// Configuração de ícones e rótulos de comodidades (UI)
+const AMENITY_CONFIG = {
+  wifi: { label: "Wi-Fi Grátis", icon: "ri-wifi-line", desc: "Internet de alta velocidade" },
+  cafe: { label: "Café / Lounge", icon: "ri-cup-line", desc: "Espaço com café e bebidas" },
+  coberto: { label: "Vaga Coberta", icon: "ri-umbrella-line", desc: "Proteção contra sol e chuva" },
+  banheiro: { label: "Banheiro", icon: "ri-rest-time-line", desc: "Acesso a sanitário limpo" },
+  cameras: { label: "Segurança 24h", icon: "ri-shield-check-line", desc: "Câmeras e monitoramento" },
+  trabalho: { label: "Espaço p/ Notebook", icon: "ri-laptop-line", desc: "Mesa com tomadas p/ trabalho" },
+  conveniencia: { label: "Conveniência", icon: "ri-store-2-line", desc: "Loja com lanches e compras" }
+};
+
 // Estado Global da Aplicação
 const AppState = {
   currentScreen: 'screen-search',
@@ -36,38 +47,9 @@ const AppState = {
     platformFee: 7.50,
     total: 37.50,
     paymentMethod: 'pix',
-    reservationCode: 'RF-84920'
+    reservationCode: 'REC-84920'
   },
-  userBookings: [
-    {
-      id: "res-01",
-      code: "RF-84920",
-      wallboxTitle: "Wallbox EcoCharge Campolim",
-      wallboxPhoto: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=800&q=80",
-      power: "7.4 kW",
-      date: "Hoje, 26 Ago",
-      time: "14:00 - 16:00 (2h)",
-      total: 37.50,
-      fee25: 7.50,
-      status: "CONCLUIDA",
-      address: "Rua Antonio Perez Hernandez, 480 - Casa 34, Campolim",
-      accessNotes: "Interfone 34, portão automático. Anfitrião Carlos avisado."
-    },
-    {
-      id: "res-02",
-      code: "RF-71044",
-      wallboxTitle: "Hub FastCharge Sorocaba Coworking",
-      wallboxPhoto: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80",
-      power: "22 kW",
-      date: "22 Ago 2026",
-      time: "10:00 - 12:00 (2h)",
-      total: 55.00,
-      fee25: 11.00,
-      status: "CONCLUIDA",
-      address: "Av. Eng. Carlos Reinaldo Mendes, 2015 - Vagas EV 01 e 02",
-      accessNotes: "Ticket na cancela. Vagas EV no Piso -1."
-    }
-  ],
+  userBookings: [],
   map: null,
   markers: []
 };
@@ -85,6 +67,7 @@ async function initApp() {
   bindNavigationEvents();
   bindFilterEvents();
   bindDesktopToggle();
+  carregarSessaoMotorista();
 
   // Conexão com Back-end Java Spring Boot
   await loadWallboxData();
@@ -131,9 +114,7 @@ function calculateDistanceKm(lat1, lng1, lat2, lng2) {
 }
 
 function updateDistancesFromUserLocation() {
-  const list = (AppState.wallboxesList && AppState.wallboxesList.length > 0)
-    ? AppState.wallboxesList
-    : WALLBOXES_DATA;
+  const list = AppState.wallboxesList || [];
 
   list.forEach(wb => {
     if (wb.lat && wb.lng && AppState.userLocation) {
@@ -149,14 +130,14 @@ function updateDistancesFromUserLocation() {
 }
 
 /**
- * Carrega pontos de recarga da API Java Spring Boot (com suporte a filtro de raio no banco de dados)
+ * Carrega pontos de recarga e reservas diretamente da API Java Spring Boot
  */
 async function loadWallboxData() {
   const isHealthy = await ApiService.checkBackendHealth();
   AppState.backendOnline = isHealthy;
   updateBackendStatusBadge(isHealthy);
 
-  // Consulta pontos no backend (filtrando por raio de proximidade no BD) ou usa dataset local
+  // Consulta pontos no backend (filtrando por raio de proximidade no MySQL)
   AppState.wallboxesList = await ApiService.getWallboxes(
     AppState.userLocation.lat,
     AppState.userLocation.lng,
@@ -168,23 +149,177 @@ async function loadWallboxData() {
   }
 
   updateDistancesFromUserLocation();
+  atualizarBannerMaisProxima();
   renderMapMarkers();
   renderUserLocationMarker(AppState.userLocation.lat, AppState.userLocation.lng);
+
+  await loadReservasData();
+}
+
+async function loadReservasData() {
+  try {
+    const rawReservas = await ApiService.getReservas();
+    if (rawReservas && rawReservas.length > 0) {
+      AppState.userBookings = rawReservas.map(r => {
+        const wb = r.wallbox || {};
+        const local = wb.local || {};
+        const host = wb.host || {};
+        const precoHora = wb.precoHora ? Number(wb.precoHora) : 15.0;
+        const subtotal = precoHora * 2;
+        const taxa = subtotal * 0.25;
+        const total = subtotal + taxa;
+        return {
+          id: `res-${r.id}`,
+          code: `REC-${1000 + r.id}`,
+          wallboxTitle: wb.modelo || "Wallbox Recarga Fácil",
+          wallboxPhoto: wb.fotoUrl || "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=800&q=80",
+          power: wb.potencia ? wb.potencia.replace('P_', '').replace('KW', ' kW') : "7.4 kW",
+          date: r.dataReserva || "Data confirmada",
+          time: r.horario ? `${r.horario.substring(0, 5)} (2h)` : "14:00 (2h)",
+          total: total,
+          fee25: taxa,
+          status: r.statusReserva || "CONFIRMADA",
+          address: local.enderecoCompleto || "Endereço liberado",
+          accessNotes: local.instrucoesAcesso || `Anfitrião ${host.nome || 'avisado'}.`
+        };
+      });
+    }
+  } catch (e) {
+    console.error("Erro ao carregar reservas:", e);
+  }
+}
+
+/**
+ * GOOGLE MAPS: Identifica a estação mais próxima do motorista e gera rota direta
+ */
+function atualizarBannerMaisProxima() {
+  const banner = document.getElementById('nearest-station-banner');
+  if (!banner) return;
+
+  const list = AppState.wallboxesList || [];
+  if (list.length === 0) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  // Ordena pela menor distância em km
+  const ordenada = [...list].sort((a, b) => (a.distanceKm || 999) - (b.distanceKm || 999));
+  const maisProxima = ordenada[0];
+
+  if (maisProxima) {
+    document.getElementById('nearest-station-title').innerText = maisProxima.title;
+    document.getElementById('nearest-station-desc').innerText = `Apenas ${maisProxima.distanceKm} km · ${maisProxima.neighborhood || 'Sorocaba - SP'}`;
+    const gmapsBtn = document.getElementById('nearest-station-gmaps-btn');
+    if (gmapsBtn) {
+      gmapsBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${maisProxima.lat},${maisProxima.lng}`;
+    }
+    banner.style.display = 'flex';
+  }
+}
+
+/* ==========================================================================
+   AUTENTICAÇÃO & SESSÃO DO MOTORISTA
+   ========================================================================== */
+function abrirModalLoginMotorista() {
+  const modal = document.getElementById('modal-login-motorista');
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalLoginMotorista() {
+  const modal = document.getElementById('modal-login-motorista');
+  if (modal) modal.style.display = 'none';
+}
+
+function preencherLoginMotorista(email, senha) {
+  document.getElementById('motorista-login-email').value = email;
+  document.getElementById('motorista-login-senha').value = senha;
+}
+
+async function realizarLoginMotorista(event) {
+  event.preventDefault();
+  const email = document.getElementById('motorista-login-email').value.trim();
+  const senha = document.getElementById('motorista-login-senha').value.trim();
+  const btn = document.getElementById('btn-submit-motorista');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Autenticando...';
+
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/auth/login-motorista`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha })
+    });
+
+    if (response.ok) {
+      const motoristaData = await response.json();
+      sessionStorage.setItem('recarga_facil_motorista', JSON.stringify(motoristaData));
+      AppState.currentMotorista = motoristaData;
+      AppState.currentMotoristaId = motoristaData.id;
+      atualizarBarraMotorista();
+      fecharModalLoginMotorista();
+      showToast(`Bem-vindo, ${motoristaData.nome}!`);
+      if (AppState.currentScreen === 'screen-profile') renderScreenProfile();
+      if (AppState.currentScreen === 'screen-bookings-list') renderScreenBookingsList();
+    } else {
+      const err = await response.json();
+      alert(err.error || 'Credenciais inválidas.');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Erro ao conectar ao servidor Java Spring Boot.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ri-login-box-line"></i> Entrar como Motorista';
+  }
+}
+
+function atualizarBarraMotorista() {
+  const nomeBar = document.getElementById('motorista-nome-bar');
+  const btnAuth = document.getElementById('btn-motorista-auth');
+  if (!nomeBar || !btnAuth) return;
+
+  if (AppState.currentMotorista) {
+    const primeiroNome = AppState.currentMotorista.nome ? AppState.currentMotorista.nome.split(' ')[0] : 'Motorista';
+    nomeBar.innerText = `${primeiroNome} (Sair)`;
+    btnAuth.title = "Clique para encerrar a sessão e voltar à Página Inicial";
+    btnAuth.onclick = fazerLogoutMotorista;
+  } else {
+    window.location.replace('index.html?login=motorista');
+  }
+}
+
+function fazerLogoutMotorista() {
+  if (confirm("Deseja realmente sair da sua conta?")) {
+    sessionStorage.removeItem('recarga_facil_motorista');
+    window.location.replace('index.html');
+  }
+}
+
+function carregarSessaoMotorista() {
+  const salvo = sessionStorage.getItem('recarga_facil_motorista');
+  if (salvo) {
+    try {
+      AppState.currentMotorista = JSON.parse(salvo);
+      AppState.currentMotoristaId = AppState.currentMotorista.id;
+    } catch (e) {}
+  }
+  atualizarBarraMotorista();
 }
 
 function updateBackendStatusBadge(isOnline) {
-  const badgeEl = document.getElementById('backend-status-indicator');
-  if (badgeEl) {
+  const badges = document.querySelectorAll('.backend-status-badge, #backend-status-indicator');
+  badges.forEach(badgeEl => {
     if (isOnline) {
-      badgeEl.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#00D084;margin-right:4px;"></span> Java API Online`;
+      badgeEl.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#00D084;margin-right:6px;"></span> Java API Online (Porta 8080)`;
       badgeEl.style.color = '#047857';
       badgeEl.style.background = '#ECFDF5';
     } else {
-      badgeEl.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#F59E0B;margin-right:4px;"></span> Modo Standalone`;
+      badgeEl.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#F59E0B;margin-right:6px;"></span> Modo Standalone`;
       badgeEl.style.color = '#B45309';
       badgeEl.style.background = '#FEF3C7';
     }
-  }
+  });
 }
 
 /* ==========================================================================
@@ -321,8 +456,7 @@ function renderMapMarkers() {
 }
 
 function handleMarkerClick(wallboxId) {
-  const wallbox = (AppState.wallboxesList && AppState.wallboxesList.find(w => w.id === wallboxId)) 
-    || WALLBOXES_DATA.find(w => w.id === wallboxId);
+  const wallbox = AppState.wallboxesList && AppState.wallboxesList.find(w => w.id === wallboxId);
   if (!wallbox) return;
 
   AppState.selectedWallbox = wallbox;
@@ -350,11 +484,16 @@ function showBottomSheetPreview(wallbox) {
           <h3 class="preview-title">${wallbox.title}</h3>
           <p class="text-muted" style="font-size: 12px;"><i class="ri-map-pin-2-line"></i> ${wallbox.distanceKm} km • ${wallbox.neighborhood}</p>
         </div>
-        <div class="d-flex justify-between align-center mt-2">
+        <div class="d-flex justify-between align-center mt-2" style="gap: 8px;">
           <div class="preview-price">R$ ${wallbox.pricePerHour.toFixed(2).replace('.', ',')}<small>/h</small></div>
-          <button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;" onclick="navigateTo('screen-details')">
-            Ver Detalhes <i class="ri-arrow-right-line"></i>
-          </button>
+          <div style="display: flex; gap: 6px;">
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${wallbox.lat},${wallbox.lng}" target="_blank" class="btn btn-secondary" style="padding: 6px 10px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; border-radius: 8px;" title="Abrir rota no Google Maps">
+              <i class="ri-map-pin-2-fill" style="color: #EA4335;"></i> Google Maps
+            </a>
+            <button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;" onclick="navigateTo('screen-details')">
+              Ver Detalhes <i class="ri-arrow-right-line"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -394,9 +533,7 @@ function toggleAmenityFilter(amenityKey, element) {
 }
 
 function getFilteredWallboxes() {
-  const sourceList = (AppState.wallboxesList && AppState.wallboxesList.length > 0) 
-    ? AppState.wallboxesList 
-    : WALLBOXES_DATA;
+  const sourceList = AppState.wallboxesList || [];
 
   return sourceList.filter(wb => {
     if (AppState.activeTypeFilter !== 'todos' && wb.type !== AppState.activeTypeFilter) {
@@ -517,9 +654,7 @@ function renderScreenFavorites() {
   const container = document.getElementById('favorites-content-placeholder');
   if (!container) return;
 
-  const allWallboxes = (AppState.wallboxesList && AppState.wallboxesList.length > 0) 
-    ? AppState.wallboxesList 
-    : WALLBOXES_DATA;
+  const allWallboxes = AppState.wallboxesList || [];
 
   // Filtra as wallboxes favoritadas
   const favList = allWallboxes.filter(wb => AppState.favorites.has(wb.id));
@@ -619,7 +754,7 @@ function setFavoritesFilter(filterType) {
 }
 
 function openFavoriteDetails(wbId) {
-  const allWallboxes = (AppState.wallboxesList && AppState.wallboxesList.length > 0) ? AppState.wallboxesList : WALLBOXES_DATA;
+  const allWallboxes = AppState.wallboxesList || [];
   const wb = allWallboxes.find(w => w.id === wbId);
   if (wb) {
     AppState.selectedWallbox = wb;
@@ -636,9 +771,27 @@ function quickBookFavorite(wbId, event) {
 /* ==========================================================================
    5. TELA DE MINHAS RECARGAS / HISTÓRICO (SCREEN BOOKINGS LIST)
    ========================================================================== */
-function renderScreenBookingsList() {
+async function renderScreenBookingsList() {
   const container = document.getElementById('bookings-list-content-placeholder');
   if (!container) return;
+
+  await loadReservasData();
+
+  if (!AppState.userBookings || AppState.userBookings.length === 0) {
+    container.innerHTML = `
+      <div class="screen-scroll-body" style="padding: 16px 16px calc(var(--bottom-nav-height) + 20px) 16px;">
+        <div class="favorites-header">
+          <h1>Minhas Recargas</h1>
+          <p>Histórico e sessões agendadas</p>
+        </div>
+        <div style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+          <i class="ri-history-line" style="font-size: 36px; opacity: 0.5;"></i>
+          <p class="mt-2">Nenhuma recarga encontrada no banco de dados.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
 
   const bookingsHtml = AppState.userBookings.map(item => `
     <div class="booking-item-card">
@@ -688,94 +841,156 @@ function renderScreenBookingsList() {
 /* ==========================================================================
    6. TELA DE PERFIL (SCREEN PROFILE)
    ========================================================================== */
-function renderScreenProfile() {
+async function renderScreenProfile() {
   const container = document.getElementById('profile-content-placeholder');
   if (!container) return;
 
   container.innerHTML = `
-    <div class="screen-scroll-body" style="padding: 16px 16px calc(var(--bottom-nav-height) + 20px) 16px;">
-      <!-- Card do Usuário -->
-      <div class="profile-hero-card">
-        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&h=160&q=80" alt="Avatar" class="profile-avatar-large">
-        <div>
-          <h2 style="font-size: 17px; font-weight: 800;">Motorista Demo EV</h2>
-          <p style="font-size: 12px; color: #94A3B8;">motorista@email.com</p>
-          <span class="badge badge-verified mt-1" style="background: rgba(0, 208, 132, 0.2); color: #00D084;">
-            <i class="ri-shield-check-fill"></i> Motorista Verificado
-          </span>
-        </div>
-      </div>
+    <div style="padding: 60px 20px; text-align: center; color: var(--text-muted);">
+      <i class="ri-loader-4-line ri-spin" style="font-size: 28px; color: var(--primary);"></i>
+      <p style="margin-top: 12px; font-size: 13px;">Carregando perfil do banco de dados MySQL...</p>
+    </div>
+  `;
 
-      <!-- Veículo Elétrico Cadastrado -->
+  try {
+    const motoristaId = AppState.currentMotoristaId || 1;
+    const motorista = await ApiService.getMotorista(motoristaId) || {
+      id: 1,
+      nome: "Motorista Demo EV",
+      email: "motorista@email.com",
+      telefone: "(15) 99876-5432",
+      cpf: "123.456.789-00"
+    };
+    AppState.currentMotorista = motorista;
+
+    const todosVeiculos = await ApiService.getVeiculos();
+    const veiculoDoMotorista = todosVeiculos.find(v => v.motorista && v.motorista.id === motorista.id) || null;
+    AppState.currentVeiculo = veiculoDoMotorista;
+
+    // Métricas reais calculadas a partir das reservas no banco
+    const sessoes = AppState.userBookings.length;
+    const kwhTotal = sessoes * 35; // estimativa de kWh por sessão
+    const co2Evitado = (kwhTotal * 0.42).toFixed(1);
+
+    const veiculoHtml = veiculoDoMotorista ? `
       <div class="card mb-3">
         <div class="d-flex justify-between align-center mb-2">
           <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Meu Veículo Elétrico</span>
-          <span class="badge badge-power"><i class="ri-plug-line"></i> Tipo 2 / CCS2</span>
+          <span class="badge badge-power"><i class="ri-plug-line"></i> ${veiculoDoMotorista.tipoConector || 'Tipo 2'}</span>
         </div>
         <div class="d-flex gap-3 align-center">
           <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: #ECFDF5; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--secondary);">
             <i class="ri-car-line"></i>
           </div>
           <div>
-            <h4 style="font-size: 14px; font-weight: 800;">BYD Dolphin GS 2024</h4>
-            <p style="font-size: 12px; color: var(--text-muted);">Placa: BRA2E19 • Bateria 44.9 kWh</p>
+            <h4 style="font-size: 14px; font-weight: 800;">${veiculoDoMotorista.marca ? veiculoDoMotorista.marca + ' ' : ''}${veiculoDoMotorista.modelo || 'Veículo Elétrico'}</h4>
+            <p style="font-size: 12px; color: var(--text-muted);">Placa: ${veiculoDoMotorista.placa || 'Sem placa'} • RENAVAM: ${veiculoDoMotorista.renavan || 'N/D'}</p>
           </div>
         </div>
       </div>
+    ` : `
+      <div class="card mb-3 text-center" style="padding: 16px;">
+        <p style="font-size: 13px; color: var(--text-muted);">Nenhum veículo vinculado a este motorista no banco de dados.</p>
+        <button class="btn btn-outline-primary mt-2" style="font-size: 12px; padding: 6px 14px;" onclick="window.open('admin.html', '_blank')">
+          <i class="ri-add-line"></i> Cadastrar Veículo no Painel Admin
+        </button>
+      </div>
+    `;
 
-      <!-- Dashboard de Impacto Sustentável -->
-      <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Seu Impacto Sustentável</h3>
-      <div class="impact-dashboard-grid">
-        <div class="impact-metric-box">
-          <i class="ri-leaf-line" style="color: var(--primary); font-size: 18px;"></i>
-          <div class="metric-val">148.5 kg</div>
-          <div class="metric-label">CO₂ Evitado</div>
+    container.innerHTML = `
+      <div class="screen-scroll-body" style="padding: 16px 16px calc(var(--bottom-nav-height) + 20px) 16px;">
+        <!-- Card do Usuário (Do MySQL) -->
+        <div class="profile-hero-card">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&h=160&q=80" alt="Avatar" class="profile-avatar-large">
+          <div>
+            <h2 style="font-size: 17px; font-weight: 800;">${motorista.nome}</h2>
+            <p style="font-size: 12px; color: #94A3B8;">${motorista.email}</p>
+            <p style="font-size: 11px; color: #94A3B8; margin-top: 2px;">Tel: ${motorista.telefone || 'N/A'} • CPF: ${motorista.cpf || 'N/A'}</p>
+            <span class="badge badge-verified mt-2" style="background: rgba(0, 208, 132, 0.2); color: #00D084;">
+              <i class="ri-database-2-line"></i> Conectado ao MySQL (ID #${motorista.id})
+            </span>
+          </div>
         </div>
-        <div class="impact-metric-box">
-          <i class="ri-flashlight-line" style="color: #F59E0B; font-size: 18px;"></i>
-          <div class="metric-val">210 kWh</div>
-          <div class="metric-label">Energia Limpa</div>
-        </div>
-        <div class="impact-metric-box">
-          <i class="ri-charging-pile-line" style="color: #3B82F6; font-size: 18px;"></i>
-          <div class="metric-val">5</div>
-          <div class="metric-label">Sessões</div>
-        </div>
-      </div>
 
-      <!-- Menu de Opções -->
-      <div class="profile-menu-list mb-3">
-        <div class="profile-menu-item" onclick="showToast('Cartão Mastercard final 8821 ativo')">
-          <div class="menu-left">
-            <div class="menu-icon"><i class="ri-bank-card-line"></i></div>
-            <span>Formas de Pagamento (Pix / Cartão)</span>
+        <!-- Veículo Elétrico Cadastrado -->
+        ${veiculoHtml}
+
+        <!-- Dashboard de Impacto Sustentável -->
+        <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Seu Impacto Sustentável</h3>
+        <div class="impact-dashboard-grid">
+          <div class="impact-metric-box">
+            <i class="ri-leaf-line" style="color: var(--primary); font-size: 18px;"></i>
+            <div class="metric-val">${co2Evitado} kg</div>
+            <div class="metric-label">CO₂ Evitado</div>
           </div>
-          <i class="ri-arrow-right-s-line text-muted"></i>
+          <div class="impact-metric-box">
+            <i class="ri-flashlight-line" style="color: #F59E0B; font-size: 18px;"></i>
+            <div class="metric-val">${kwhTotal} kWh</div>
+            <div class="metric-label">Energia Limpa</div>
+          </div>
+          <div class="impact-metric-box">
+            <i class="ri-charging-pile-line" style="color: #3B82F6; font-size: 18px;"></i>
+            <div class="metric-val">${sessoes}</div>
+            <div class="metric-label">Sessões</div>
+          </div>
         </div>
-        <div class="profile-menu-item" onclick="showToast('Cadastre sua Wallbox e ganhe renda extra!')">
-          <div class="menu-left">
-            <div class="menu-icon" style="color: #F59E0B; background: #FEF3C7;"><i class="ri-home-wifi-line"></i></div>
-            <span>Tornar-se um Anfitrião (Host)</span>
+
+        <!-- Menu de Opções -->
+        <div class="profile-menu-list mb-3">
+          <div class="profile-menu-item" onclick="alternarMotoristaBanco()">
+            <div class="menu-left">
+              <div class="menu-icon" style="background: #EEF2FF; color: #4F46E5;"><i class="ri-user-switch-line"></i></div>
+              <span>Alternar Motorista do Banco</span>
+            </div>
+            <i class="ri-arrow-right-s-line text-muted"></i>
           </div>
-          <i class="ri-arrow-right-s-line text-muted"></i>
-        </div>
-        <div class="profile-menu-item" onclick="showToast('Notificações push ativadas')">
-          <div class="menu-left">
-            <div class="menu-icon"><i class="ri-notification-3-line"></i></div>
-            <span>Notificações e Avisos</span>
+          <div class="profile-menu-item" onclick="window.open('admin.html', '_blank')">
+            <div class="menu-left">
+              <div class="menu-icon" style="color: #F59E0B; background: #FEF3C7;"><i class="ri-settings-4-line"></i></div>
+              <span>Abrir Painel Administrativo</span>
+            </div>
+            <i class="ri-arrow-right-s-line text-muted"></i>
           </div>
-          <i class="ri-arrow-right-s-line text-muted"></i>
-        </div>
-        <div class="profile-menu-item" onclick="showToast('Suporte Recarga Fácil: suporte@recargafacil.com')">
-          <div class="menu-left">
-            <div class="menu-icon"><i class="ri-customer-service-2-line"></i></div>
-            <span>Ajuda & Suporte UPX 4</span>
+          <div class="profile-menu-item" onclick="showToast('Cartão Mastercard final 8821 ativo')">
+            <div class="menu-left">
+              <div class="menu-icon"><i class="ri-bank-card-line"></i></div>
+              <span>Formas de Pagamento (Pix / Cartão)</span>
+            </div>
+            <i class="ri-arrow-right-s-line text-muted"></i>
           </div>
-          <i class="ri-arrow-right-s-line text-muted"></i>
+          <div class="profile-menu-item" onclick="showToast('Notificações push ativadas')">
+            <div class="menu-left">
+              <div class="menu-icon"><i class="ri-notification-3-line"></i></div>
+          <div class="profile-menu-item" onclick="fazerLogoutMotorista()">
+            <div class="menu-left">
+              <div class="menu-icon" style="color: #EF4444; background: #FEE2E2;"><i class="ri-logout-box-r-line"></i></div>
+              <span style="color: #EF4444; font-weight: 700;">Sair da Conta</span>
+            </div>
+            <i class="ri-arrow-right-s-line text-muted"></i>
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
+  } catch (err) {
+    console.error("Erro ao renderizar tela de perfil:", err);
+  }
+}
+
+async function alternarMotoristaBanco() {
+  try {
+    const motoristas = await ApiService.getMotoristas();
+    if (!motoristas || motoristas.length <= 1) {
+      showToast("Apenas 1 motorista cadastrado no banco.");
+      return;
+    }
+    const atualId = AppState.currentMotoristaId || 1;
+    const outro = motoristas.find(m => m.id !== atualId) || motoristas[0];
+    AppState.currentMotoristaId = outro.id;
+    showToast(`Alternado para motorista: ${outro.nome}`);
+    renderScreenProfile();
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 /* ==========================================================================
@@ -784,8 +999,8 @@ function renderScreenProfile() {
 
 // Tela 2: Detalhes da Wallbox
 function renderScreenDetails() {
-  const wb = AppState.selectedWallbox || WALLBOXES_DATA[0];
-  const container = document.getElementById('details-content-placeholder');
+  const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
+  if (!wb) return;
   if (!container) return;
 
   const isRes = wb.type === 'residencial';
@@ -934,8 +1149,8 @@ function formatSlotRange(startTimeStr, durationHours) {
 }
 
 function renderTimeSlots() {
-  const wb = AppState.selectedWallbox || WALLBOXES_DATA[0];
-  const gridContainer = document.getElementById('booking-time-slots-grid');
+  const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
+  if (!wb) return;
   if (!gridContainer) return;
 
   const duration = AppState.booking.durationHours || 2;
@@ -966,7 +1181,8 @@ function renderTimeSlots() {
 
 // Tela 3: Agendamento de Horário
 function renderScreenBooking() {
-  const wb = AppState.selectedWallbox || WALLBOXES_DATA[0];
+  const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
+  if (!wb) return;
   const container = document.getElementById('booking-content-placeholder');
   if (!container) return;
 
@@ -1064,6 +1280,11 @@ function renderScreenBooking() {
 }
 
 async function handleConfirmBooking() {
+  if (AppState.currentMotorista) {
+    AppState.booking.motoristaId = AppState.currentMotorista.id;
+  } else {
+    AppState.booking.motoristaId = AppState.currentMotoristaId || 1;
+  }
   const reservaResult = await ApiService.createReserva(AppState.booking);
   if (reservaResult && reservaResult.id) {
     AppState.booking.reservaId = reservaResult.id;
@@ -1120,7 +1341,8 @@ function updateBookingCalculations() {
 
 // Tela 4: Pagamento e Checkout (Com Taxa de 25%)
 function renderScreenCheckout() {
-  const wb = AppState.selectedWallbox || WALLBOXES_DATA[0];
+  const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
+  if (!wb) return;
   const container = document.getElementById('checkout-content-placeholder');
   if (!container) return;
 
@@ -1184,13 +1406,13 @@ function renderScreenCheckout() {
         <div class="badge badge-verified"><i class="ri-flashlight-line"></i> Aprovação Imediata</div>
         
         <div class="qr-code-wrapper">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=00020126580014BR.GOV.BCB.PIX0136recargafacil-upx4-demo-checkout5204000053039865405${AppState.booking.total.toFixed(2)}5802BR" class="qr-code-img" alt="QR Code Pix">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=00020126580014BR.GOV.BCB.PIX0136recargafacil-checkout-pix5204000053039865405${AppState.booking.total.toFixed(2)}5802BR" class="qr-code-img" alt="QR Code Pix">
         </div>
 
         <p style="font-size: 12px; color: var(--text-muted);">Escaneie o QR Code no app do seu banco ou use o Copia e Cola:</p>
 
         <div class="pix-copia-cola-box">
-          <input type="text" readonly value="00020126580014BR.GOV.BCB.PIX0136recargafacil-upx4-demo-checkout5204000053039865405${AppState.booking.total.toFixed(2)}5802BR" class="pix-input" id="pix-copy-field">
+          <input type="text" readonly value="00020126580014BR.GOV.BCB.PIX0136recargafacil-checkout-pix5204000053039865405${AppState.booking.total.toFixed(2)}5802BR" class="pix-input" id="pix-copy-field">
           <button class="btn-copy-pix" onclick="copyPixCode()"><i class="ri-file-copy-line"></i> Copiar</button>
         </div>
 
@@ -1265,21 +1487,23 @@ async function handleProcessPayment() {
   });
 
   // Registra no histórico do usuário
-  const wb = AppState.selectedWallbox || WALLBOXES_DATA[0];
-  AppState.userBookings.unshift({
-    id: `res-${Date.now()}`,
-    code: AppState.booking.reservationCode,
-    wallboxTitle: wb.title,
-    wallboxPhoto: wb.photo,
-    power: wb.power,
-    date: AppState.booking.date,
-    time: `${AppState.booking.timeSlot} (${AppState.booking.durationHours}h)`,
-    total: AppState.booking.total,
-    fee25: AppState.booking.platformFee,
-    status: "CONCLUIDA",
-    address: wb.unlockedAddress ? `${wb.unlockedAddress.street}, ${wb.unlockedAddress.number} - ${wb.unlockedAddress.neighborhood}` : "Endereço liberado",
-    accessNotes: wb.unlockedAddress ? wb.unlockedAddress.accessInstructions : "Acesso liberado"
-  });
+  const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
+  if (wb) {
+    AppState.userBookings.unshift({
+      id: `res-${Date.now()}`,
+      code: AppState.booking.reservationCode,
+      wallboxTitle: wb.title,
+      wallboxPhoto: wb.photo,
+      power: wb.power,
+      date: AppState.booking.date,
+      time: `${AppState.booking.timeSlot} (${AppState.booking.durationHours}h)`,
+      total: AppState.booking.total,
+      fee25: AppState.booking.platformFee,
+      status: "CONCLUIDA",
+      address: wb.unlockedAddress ? `${wb.unlockedAddress.street}, ${wb.unlockedAddress.number} - ${wb.unlockedAddress.neighborhood}` : "Endereço liberado",
+      accessNotes: wb.unlockedAddress ? wb.unlockedAddress.accessInstructions : "Acesso liberado"
+    });
+  }
 
   setTimeout(() => {
     navigateTo('screen-success');
@@ -1289,7 +1513,8 @@ async function handleProcessPayment() {
 
 // Tela 5: Sucesso & Desbloqueio do Endereço Completo e Instruções de Acesso
 function renderScreenSuccess() {
-  const wb = AppState.selectedWallbox || WALLBOXES_DATA[0];
+  const wb = AppState.selectedWallbox || (AppState.wallboxesList && AppState.wallboxesList[0]);
+  if (!wb) return;
   const addr = wb.unlockedAddress || {
     street: "Rua Antonio Perez Hernandez",
     number: "480",
@@ -1440,18 +1665,25 @@ function initTimeStatusBar() {
 }
 
 function bindDesktopToggle() {
-  const btn = document.getElementById('toggle-frame-btn');
+  const buttons = document.querySelectorAll('#toggle-frame-btn, .btn-view-toggle');
   const container = document.querySelector('.app-container');
-  if (!btn || !container) return;
+  if (!container || buttons.length === 0) return;
 
-  btn.addEventListener('click', () => {
-    container.classList.toggle('phone-frame');
-    container.classList.toggle('fullscreen-mode');
-    const isFrame = container.classList.contains('phone-frame');
-    btn.textContent = isFrame ? 'Modo Tela Cheia' : 'Modo Celular';
-    
-    if (AppState.map) {
-      setTimeout(() => AppState.map.invalidateSize(), 300);
-    }
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.classList.toggle('phone-frame');
+      container.classList.toggle('fullscreen-mode');
+      const isFrame = container.classList.contains('phone-frame');
+      
+      buttons.forEach(b => {
+        b.innerHTML = isFrame 
+          ? '<i class="ri-fullscreen-line"></i> Modo Tela Cheia' 
+          : '<i class="ri-smartphone-line"></i> Modo Mobile';
+      });
+      
+      if (AppState.map) {
+        setTimeout(() => AppState.map.invalidateSize(), 300);
+      }
+    });
   });
 }

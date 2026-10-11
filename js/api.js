@@ -6,16 +6,16 @@
  * Gerencia a comunicação HTTP (via fetch) entre a interface Web App e o 
  * Back-end Java Spring Boot rodando em http://localhost:8080/api.
  * 
- * ARQUITETURA HÍBRIDA RESILIENTE:
- * - Se o Back-end Java e o banco MySQL estiverem ativos, consome os dados em tempo real.
- * - Caso o servidor Java ainda não tenha sido iniciado, utiliza o dataset mock local
- *   em js/data.js garantindo que a interface continue 100% interativa para demonstração.
+ * ARQUITETURA 100% REAL:
+ * - Toda comunicação é realizada diretamente com a API REST do Spring Boot.
+ * - Sem datasets mockados: todas as entidades (Motoristas, Veículos, Hosts, Wallboxes,
+ *   Reservas e Pagamentos) são persistidas e lidas no MySQL.
  * ============================================================================
  */
 
 const API_CONFIG = {
   BASE_URL: 'http://localhost:8080/api',
-  TIMEOUT_MS: 3000,
+  TIMEOUT_MS: 5000,
   isBackendConnected: false
 };
 
@@ -23,7 +23,6 @@ const ApiService = {
 
   /**
    * VERIFICAÇÃO DE CONECTIVIDADE COM O BACK-END JAVA
-   * Disparada ao inicializar o app para saber se o Spring Boot está online.
    */
   async checkBackendHealth() {
     try {
@@ -45,114 +44,182 @@ const ApiService = {
       }
     } catch (err) {
       API_CONFIG.isBackendConnected = false;
-      console.warn("ℹ️ [Recarga Fácil] Back-end Java offline ou não inicializado. Usando modo de simulação local.");
+      console.error("❌ [Recarga Fácil] Back-end Java offline ou inacessível:", err);
     }
     return false;
   },
 
   /**
-   * BUSCAR WALLBOXES (TELA 1: MAPA)
+   * BUSCAR WALLBOXES (TELA: MAPA DE ESTAÇÕES)
    * Conexão Java: GET /api/wallboxes ou GET /api/wallboxes/nearby
    */
   async getWallboxes(lat, lng, radiusKm = 15) {
-    if (API_CONFIG.isBackendConnected) {
-      try {
-        let url = `${API_CONFIG.BASE_URL}/wallboxes`;
-        if (lat && lng) {
-          url = `${API_CONFIG.BASE_URL}/wallboxes/nearby?lat=${lat}&lng=${lng}&radius=${radiusKm}`;
-        }
-
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          // Converte o formato retornado pelo Java para o formato visual da UI
-          return data.map(item => this.mapJavaWallboxToUI(item));
-        }
-      } catch (err) {
-        console.error("Erro ao buscar Wallboxes do Java:", err);
+    try {
+      let url = `${API_CONFIG.BASE_URL}/wallboxes`;
+      if (lat && lng) {
+        url = `${API_CONFIG.BASE_URL}/wallboxes/nearby?lat=${lat}&lng=${lng}&radius=${radiusKm}`;
       }
+
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        API_CONFIG.isBackendConnected = true;
+        return data.map(item => this.mapJavaWallboxToUI(item));
+      } else {
+        console.error("Erro na resposta da API de Wallboxes:", response.status);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar Wallboxes do Java:", err);
     }
-    // Fallback: Retorna dados locais de data.js
-    return WALLBOXES_DATA;
+    return [];
   },
 
   /**
-   * CRIAR UMA RESERVA (TELA 3: AGENDAMENTO)
+   * CRIAR UMA RESERVA (TELA: AGENDAMENTO)
    * Conexão Java: POST /api/reservas
-   * Payload: { idMotorista, idWallbox, dataReserva, horario }
    */
   async createReserva(bookingData) {
-    if (API_CONFIG.isBackendConnected) {
-      try {
-        const payload = {
-          idMotorista: 1, // ID do motorista autenticado
-          idWallbox: bookingData.wallboxId || 1,
-          dataReserva: this.formatDateToIso(bookingData.date),
-          horario: this.formatTimeToIso(bookingData.timeSlot)
-        };
+    try {
+      const payload = {
+        idMotorista: bookingData.motoristaId || 1,
+        idWallbox: bookingData.wallboxId || 1,
+        idVeiculo: bookingData.veiculoId || 1,
+        dataReserva: this.formatDateToIso(bookingData.date),
+        horario: this.formatTimeToIso(bookingData.timeSlot)
+      };
 
-        const response = await fetch(`${API_CONFIG.BASE_URL}/reservas`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+      const response = await fetch(`${API_CONFIG.BASE_URL}/reservas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-        if (response.ok) {
-          const reservaCriada = await response.json();
-          console.log("✅ Reserva criada no banco de dados Java:", reservaCriada);
-          return reservaCriada;
-        }
-      } catch (err) {
-        console.error("Erro ao criar reserva no Java:", err);
+      if (response.ok) {
+        const reservaCriada = await response.json();
+        console.log("✅ Reserva criada no banco de dados Java:", reservaCriada);
+        return reservaCriada;
+      } else {
+        throw new Error("Falha ao gravar reserva no servidor.");
       }
+    } catch (err) {
+      console.error("Erro ao criar reserva no Java:", err);
+      throw err;
     }
-
-    // Retorno simulado local
-    return {
-      id: Math.floor(Math.random() * 1000) + 1,
-      statusReserva: "PENDENTE",
-      dataReserva: bookingData.date,
-      horario: bookingData.timeSlot
-    };
   },
 
   /**
-   * PROCESSAR PAGAMENTO COM TAXA DE 25% (TELA 4: CHECKOUT)
+   * PROCESSAR PAGAMENTO COM TAXA DE 25% (TELA: CHECKOUT)
    * Conexão Java: POST /api/pagamentos
-   * Payload: { idReserva, valorTotal, taxaSistema }
    */
   async processPayment(paymentData) {
-    if (API_CONFIG.isBackendConnected) {
-      try {
-        const payload = {
-          idReserva: paymentData.reservaId || 1,
-          valorTotal: paymentData.total,
-          taxaSistema: paymentData.platformFee // 25% calculado na UI
-        };
+    try {
+      const payload = {
+        idReserva: paymentData.reservaId || 1,
+        valorTotal: paymentData.total,
+        taxaSistema: paymentData.platformFee
+      };
 
-        const response = await fetch(`${API_CONFIG.BASE_URL}/pagamentos`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+      const response = await fetch(`${API_CONFIG.BASE_URL}/pagamentos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-        if (response.ok) {
-          const pagamentoCriado = await response.json();
-          console.log("✅ Pagamento aprovado no banco de dados Java:", pagamentoCriado);
-          return pagamentoCriado;
-        }
-      } catch (err) {
-        console.error("Erro ao processar pagamento no Java:", err);
+      if (response.ok) {
+        const pagamentoCriado = await response.json();
+        console.log("✅ Pagamento aprovado no banco de dados Java:", pagamentoCriado);
+        return pagamentoCriado;
+      } else {
+        throw new Error("Falha ao processar pagamento no servidor.");
       }
+    } catch (err) {
+      console.error("Erro ao processar pagamento no Java:", err);
+      throw err;
     }
+  },
 
-    // Retorno simulado local
-    return {
-      id: Math.floor(Math.random() * 1000) + 1,
-      statusPagamento: "APROVADO",
-      valorTotal: paymentData.total,
-      taxaSistema: paymentData.platformFee
-    };
+  /**
+   * ATUALIZAR STATUS DA RESERVA
+   */
+  async updateReservaStatus(idReserva, status) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/reservas/${idReserva}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    return response.json();
+  },
+
+  /**
+   * ATUALIZAR STATUS DO PAGAMENTO
+   */
+  async updatePaymentStatus(idPagamento, status) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/pagamentos/${idPagamento}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    return response.json();
+  },
+
+  /**
+   * BUSCAR HISTÓRICO DE RESERVAS DO BANCO DE DADOS
+   */
+  async getReservas() {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/reservas`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.error("Erro ao buscar reservas do banco:", err);
+    }
+    return [];
+  },
+
+  /**
+   * BUSCAR DADOS DO MOTORISTA DO BANCO DE DADOS
+   */
+  async getMotorista(id = 1) {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/motoristas/${id}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.error("Erro ao buscar motorista do banco:", err);
+    }
+    return null;
+  },
+
+  /**
+   * BUSCAR VEÍCULOS CADASTRADOS NO BANCO DE DADOS
+   */
+  async getVeiculos() {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/veiculos`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.error("Erro ao buscar veículos do banco:", err);
+    }
+    return [];
+  },
+
+  /**
+   * BUSCAR TODOS OS MOTORISTAS
+   */
+  async getMotoristas() {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/motoristas`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.error("Erro ao buscar motoristas do banco:", err);
+    }
+    return [];
   },
 
   /**
@@ -163,12 +230,10 @@ const ApiService = {
     const host = javaWb.host || {};
     const isRes = (local.tipoAmbiente === 'RESIDENCIAL');
 
-    // Potência amigável
     let powerLabel = "7.4 kW";
     if (javaWb.potencia === 'P_11KW') powerLabel = "11 kW";
     if (javaWb.potencia === 'P_22KW') powerLabel = "22 kW";
 
-    // Comodidades
     const amenitiesArray = javaWb.comodidades 
       ? javaWb.comodidades.split(',').map(s => s.trim()) 
       : ['wifi', 'cafe', 'coberto'];
@@ -214,6 +279,7 @@ const ApiService = {
   },
 
   formatDateToIso(dateStr) {
+    if (!dateStr) return new Date().toISOString().split('T')[0];
     const today = new Date();
     if (dateStr.includes('Amanhã')) today.setDate(today.getDate() + 1);
     if (dateStr.includes('Sexta')) today.setDate(today.getDate() + 2);
