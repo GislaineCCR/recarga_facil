@@ -2,29 +2,14 @@ package com.recargafacil.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.recargafacil.dto.CadastroHostDTO;
-import com.recargafacil.dto.CadastroMotoristaDTO;
 import com.recargafacil.dto.LoginRequest;
 import com.recargafacil.dto.PagamentoDTO;
 import com.recargafacil.dto.ReservaDTO;
-import com.recargafacil.model.Host;
-import com.recargafacil.model.Motorista;
-import com.recargafacil.model.Veiculo;
-import com.recargafacil.model.Wallbox;
-import com.recargafacil.repository.WallboxRepository;
-import com.recargafacil.service.HostService;
-import com.recargafacil.service.MotoristaService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -44,93 +29,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Testes de Integração da API REST - Recarga Fácil (RF01 a RF09)")
 class RecargaFacilIntegrationTest {
 
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public static BeanDefinitionRegistryPostProcessor disableDataInitializer() {
-            return new BeanDefinitionRegistryPostProcessor() {
-                @Override
-                public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
-                    if (registry.containsBeanDefinition("dataInitializer")) {
-                        registry.removeBeanDefinition("dataInitializer");
-                    }
-                }
-
-                @Override
-                public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
-                }
-            };
-        }
-    }
-
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Autowired
-    private HostService hostService;
-
-    @Autowired
-    private MotoristaService motoristaService;
-
-    @Autowired
-    private WallboxRepository wallboxRepository;
-
-    private static boolean dadosInicializados = false;
-    private static Long idMotoristaPadrao;
-    private static Long idWallboxPadrao;
-
-    @BeforeEach
-    void setUp() {
-        if (!dadosInicializados) {
-            // 1. Cadastra Host + Local + Wallbox via serviço real (RF03 / RF04)
-            CadastroHostDTO hostDto = new CadastroHostDTO();
-            hostDto.setNome("Carlos Eduardo M.");
-            hostDto.setEmail("carlos@recargafacil.com");
-            hostDto.setSenha("senha123");
-            hostDto.setCpf("321.654.987-11");
-            hostDto.setTelefone("(15) 99123-8899");
-            hostDto.setDadosBancarios("PIX: carlos@recargafacil.com");
-            hostDto.setModelo("Wallbox EcoCharge Campolim 7.4kW");
-            hostDto.setPotencia(Wallbox.Potencia.P_7KW);
-            hostDto.setPrecoHora(new BigDecimal("15.00"));
-            hostDto.setStatus(Wallbox.Status.DISPONIVEL);
-            hostDto.setEnderecoCompleto("Rua Antonio Perez Hernandez, 480 - Campolim, Sorocaba - SP");
-            Host host = hostService.cadastrarComWallbox(hostDto);
-
-            idWallboxPadrao = wallboxRepository.findByHostId(host.getId()).get(0).getId();
-
-            // 2. Cadastra Motorista Gislaine + Veículo via serviço real (RF01 / RF02)
-            CadastroMotoristaDTO gislaineDto = new CadastroMotoristaDTO();
-            gislaineDto.setNome("Gislaine Cristina Cesario Rodrigues");
-            gislaineDto.setEmail("gislaine.c.cesario@gmail.com");
-            gislaineDto.setSenha("1234");
-            gislaineDto.setCpf("36616646633");
-            gislaineDto.setTelefone("(11) 99269-6670");
-            gislaineDto.setMarca("BYD");
-            gislaineDto.setModelo("Song Plus DM-i");
-            gislaineDto.setPlaca("GIS2026");
-            gislaineDto.setTipoConector(Veiculo.TipoConector.TIPO_2);
-            Motorista motorista = motoristaService.cadastrarComVeiculo(gislaineDto);
-            idMotoristaPadrao = motorista.getId();
-
-            // 3. Cadastra Motorista exclusivo (sem perfil de Host) para teste de autorização (CT18)
-            CadastroMotoristaDTO motoristaDemoDto = new CadastroMotoristaDTO();
-            motoristaDemoDto.setNome("Motorista Demo EV");
-            motoristaDemoDto.setEmail("motorista@email.com");
-            motoristaDemoDto.setSenha("senha123");
-            motoristaDemoDto.setCpf("123.456.789-00");
-            motoristaDemoDto.setTelefone("(15) 99876-5432");
-            motoristaDemoDto.setMarca("BYD");
-            motoristaDemoDto.setModelo("Dolphin EV");
-            motoristaDemoDto.setPlaca("BRA2E19");
-            motoristaService.cadastrarComVeiculo(motoristaDemoDto);
-
-            dadosInicializados = true;
-        }
-    }
 
     @Test
     @DisplayName("CT15 - Deve autenticar Anfitrião (Host) com credenciais válidas (200 OK)")
@@ -195,7 +98,7 @@ class RecargaFacilIntegrationTest {
     void deveListarEstacoesDeRecargaDisponiveis() throws Exception {
         mockMvc.perform(get("/api/wallboxes"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(3))))
                 .andExpect(jsonPath("$[0].modelo", notNullValue()))
                 .andExpect(jsonPath("$[0].status").value("DISPONIVEL"));
     }
@@ -205,8 +108,9 @@ class RecargaFacilIntegrationTest {
     void deveExecutarFluxoCompletoDeReservaEPagamento() throws Exception {
         // 1. Criar nova Reserva (RF07)
         ReservaDTO novaReserva = new ReservaDTO();
-        novaReserva.setIdMotorista(idMotoristaPadrao);
-        novaReserva.setIdWallbox(idWallboxPadrao);
+        novaReserva.setIdMotorista(1L);
+        novaReserva.setIdWallbox(1L);
+        novaReserva.setIdVeiculo(1L);
         novaReserva.setDataReserva(LocalDate.now().plusDays(1));
         novaReserva.setHorario(LocalTime.of(16, 0));
 

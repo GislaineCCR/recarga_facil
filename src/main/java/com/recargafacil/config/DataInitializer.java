@@ -52,6 +52,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void run(String... args) throws Exception {
         // Se já existirem wallboxes no banco, o povoamento já foi feito anteriormente
         if (wallboxRepository.count() > 0) {
