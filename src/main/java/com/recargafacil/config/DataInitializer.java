@@ -117,7 +117,7 @@ public class DataInitializer implements CommandLineRunner {
         // Usuário Persona Gislaine (Motorista + Host com Multi-veículos)
         Usuario uGislaine = new Usuario();
         uGislaine.setNome("Gislaine Cristina Cesario Rodrigues");
-        uGislaine.setEmail("gislaine.c.cesario@gmail.com");
+        uGislaine.setEmail("gislainecesario@recargafacil.com");
         uGislaine.setSenha("1234");
         usuarioRepository.save(uGislaine);
 
@@ -125,7 +125,7 @@ public class DataInitializer implements CommandLineRunner {
         motoristaGislaine.setUsuario(uGislaine);
         motoristaGislaine.setNome("Gislaine Cristina Cesario Rodrigues");
         motoristaGislaine.setCpf("36616646633");
-        motoristaGislaine.setEmail("gislaine.c.cesario@gmail.com");
+        motoristaGislaine.setEmail("gislainecesario@recargafacil.com");
         motoristaGislaine.setTelefone("(11) 99269-6670");
         motoristaRepository.save(motoristaGislaine);
 
@@ -181,10 +181,10 @@ public class DataInitializer implements CommandLineRunner {
         Host hostGislaine = new Host();
         hostGislaine.setUsuario(uGislaine);
         hostGislaine.setNome("Gislaine Cristina Cesario Rodrigues");
-        hostGislaine.setEmail("gislaine.c.cesario@gmail.com");
+        hostGislaine.setEmail("gislainecesario@recargafacil.com");
         hostGislaine.setCpf("36616646633");
         hostGislaine.setTelefone("(11) 99269-6670");
-        hostGislaine.setDadosBancarios("PIX: gislaine.c.cesario@gmail.com (Nubank)");
+        hostGislaine.setDadosBancarios("PIX: gislainecesario@recargafacil.com (Nubank)");
         hostGislaine.setFotoUrl("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80");
         hostRepository.save(hostGislaine);
 

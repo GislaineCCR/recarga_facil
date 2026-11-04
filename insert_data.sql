@@ -22,7 +22,7 @@ INSERT INTO usuario (nome, email, senha) VALUES
 ('Nexus Coworking Hub', 'contato@nexushub.com', 'senha123'),
 ('Dra. Mariana Santos', 'mariana@recargafacil.com', 'senha123'),
 ('Motorista Demo EV', 'motorista@email.com', 'senha123'),
-('Gislaine Cristina Cesario Rodrigues', 'gislaine.c.cesario@gmail.com', '1234');
+('Gislaine Cristina Cesario Rodrigues', 'gislainecesario@recargafacil.com', '1234');
 
 SET @user_carlos = 1;
 SET @user_nexus = 2;
@@ -33,7 +33,7 @@ SET @user_gislaine = 5;
 -- 2. MOTORISTAS REGISTRADOS (Para agendamentos na Tela 3)
 INSERT INTO motorista (id_usuario, nome, cpf, email, telefone) VALUES
 (@user_motorista, 'Motorista Demo EV', '123.456.789-00', 'motorista@email.com', '(15) 99876-5432'),
-(@user_gislaine, 'Gislaine Cristina Cesario Rodrigues', '36616646633', 'gislaine.c.cesario@gmail.com', '(11) 99269-6670');
+(@user_gislaine, 'Gislaine Cristina Cesario Rodrigues', '36616646633', 'gislainecesario@recargafacil.com', '(11) 99269-6670');
 
 SET @id_motorista_demo = 1;
 SET @id_motorista_gislaine = 2;
@@ -56,7 +56,7 @@ INSERT INTO host (id_usuario, nome, email, cpf, telefone, dados_bancarios) VALUE
 (@user_carlos, 'Carlos Eduardo M.', 'carlos@recargafacil.com', '321.654.987-11', '(15) 99123-8899', 'PIX: carlos@recargafacil.com (Nubank)'),
 (@user_nexus, 'Nexus Hub Inovação', 'contato@nexushub.com', '12.345.678/0001-90', '(15) 3211-9000', 'PIX: 12.345.678/0001-90 (Itaú)'),
 (@user_mariana, 'Dra. Mariana Santos', 'mariana@recargafacil.com', '456.789.123-55', '(15) 98144-5566', 'PIX: mariana@recargafacil.com (Santander)'),
-(@user_gislaine, 'Gislaine Cristina Cesario Rodrigues', 'gislaine.c.cesario@gmail.com', '36616646633', '(11) 99269-6670', 'PIX: gislaine.c.cesario@gmail.com (Nubank)');
+(@user_gislaine, 'Gislaine Cristina Cesario Rodrigues', 'gislainecesario@recargafacil.com', '36616646633', '(11) 99269-6670', 'PIX: gislainecesario@recargafacil.com (Nubank)');
 
 SET @host_carlos = 1;
 SET @host_nexus = 2;

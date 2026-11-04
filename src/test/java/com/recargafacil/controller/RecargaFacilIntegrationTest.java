@@ -54,7 +54,7 @@ class RecargaFacilIntegrationTest {
     @DisplayName("CT16 - Deve autenticar Motorista com credenciais válidas (200 OK)")
     void deveAutenticarMotoristaComSucesso() throws Exception {
         LoginRequest login = new LoginRequest();
-        login.setEmail("gislaine.c.cesario@gmail.com");
+        login.setEmail("gislainecesario@recargafacil.com");
         login.setSenha("1234");
 
         mockMvc.perform(post("/api/auth/login-motorista")
@@ -62,7 +62,7 @@ class RecargaFacilIntegrationTest {
                         .content(objectMapper.writeValueAsString(login)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tipo").value("MOTORISTA"))
-                .andExpect(jsonPath("$.email").value("gislaine.c.cesario@gmail.com"));
+                .andExpect(jsonPath("$.email").value("gislainecesario@recargafacil.com"));
     }
 
     @Test
